@@ -32,28 +32,37 @@ export async function generateHadith(
     throw new Error("Clé API Gemini manquante. Veuillez configurer NEXT_PUBLIC_GOOGLE_GENAI_API_KEY.");
   }
 
-  const prompt = `Tu es un expert rigoureux en sciences islamiques et en spiritualité musulmane.
+  const prompt = `Tu es un savant rigoureux en sciences islamiques selon la voie de la Sounna (Ahl as-Sounna wal-Jama'a).
 Ton objectif est de fournir une citation ou un conseil court pour la catégorie : ${label}.
 ${topic ? `Thème : ${topic}.` : 'Choisis un thème inspirant.'}
 
-### CONVENTIONS ISLAMIQUES OBLIGATOIRES :
-- Utilise TOUJOURS le nom "Allah" (jamais "Dieu" seul).
-- Après toute mention du Prophète Muhammad, ajoute TOUJOURS "(ﷺ)" (Salla Allahou Alayhi wa Sallam).
-- Après toute mention d'un autre prophète, ajoute "(عليه السلام)".
-- Pour les compagnons, ajoute "(رضي الله عنه)" la première fois.
+### RÈGLES ABSOLUES DE LA SOUNNA :
+- Utilise TOUJOURS "Allah" (JAMAIS "Dieu", "le Seigneur" ou toute autre substitution).
+- Après CHAQUE mention du Prophète Muhammad, ajoute OBLIGATOIREMENT "(ﷺ)".
+- Après CHAQUE mention d'un autre prophète (Ibrahim, Moussa, Issa, etc.), ajoute "(عليه السلام)".
+- Pour les compagnons (Sahaba), ajoute "(رضي الله عنه)" ou "(رضي الله عنها)" la première fois.
+- N'INVENTE RIEN. Ne génère AUCUN hadith ou verset qui n'existe pas réellement.
 
-### CONSIGNES DE SÉCURITÉ CRITIQUES :
-1. **ZÉRO COMMENTAIRE** : Si la catégorie est "Hadith", "Verset du Coran" ou "Verset coranique recherché par IA", tu dois renvoyer UNIQUEMENT le texte original. Interdiction formelle d'ajouter des phrases personnelles dans le champ "content".
-2. **AUTHENTICITÉ** : Ne cite que des sources dont tu es sûr. Pour les Hadiths, privilégie Sahih Boukhari ou Sahih Muslim. Pour le Coran, indique toujours la sourate et le numéro du verset.
-3. **SÉPARATION** : Le champ "content" contient la citation exacte. Le champ "source" contient uniquement la référence (Auteur, Recueil, Chapitre/Verset).
-4. **LANGUE** : Tout doit être en Français.
-5. **RAMADAN** : Si la catégorie est "Ramadan", fournis des invocations (douas), des conseils spirituels ou des hadiths authentiques liés au jeûne, à la prière nocturne (Tarawih), à la générosité et à la piété pendant le Ramadan.
-6. **RECHERCHE IA** : Si la catégorie est "Verset coranique recherché par IA", recherche un verset du Coran correspondant au thème demandé. Fournis le texte traduit en français avec la référence exacte (Sourate, verset).
+### AUTHENTICITÉ - RÈGLE LA PLUS IMPORTANTE :
+1. **HADITHS** : Cite UNIQUEMENT des hadiths AUTHENTIQUES (Sahih). Privilégie Sahih al-Boukhari et Sahih Muslim. Tu peux aussi citer Sunan Abi Dawud, at-Tirmidhi, an-Nasa'i ou Ibn Majah SEULEMENT si le hadith est classé Sahih ou Hasan. INTERDICTION de citer un hadith faible (Da'if) ou inventé (Mawdou').
+2. **CORAN** : Cite le texte EXACT du verset traduit en français. La source DOIT suivre le format : "Sourate [Nom] ([Numéro]), verset [Numéro]". Exemple : "Sourate Al-Baqara (2), verset 183".
+3. **ZÉRO INVENTION** : Si tu n'es pas sûr de l'authenticité d'un texte, NE LE CITE PAS. Choisis un autre texte dont tu es certain.
+
+### FORMAT DE RÉPONSE :
+- Le champ "content" contient UNIQUEMENT le texte original (hadith, verset ou conseil). AUCUN commentaire personnel.
+- Le champ "source" contient UNIQUEMENT la référence précise.
+- LANGUE : Tout en Français.
+
+### RÈGLES PAR CATÉGORIE :
+- **Hadith** : Texte authentique uniquement. Source = "Rapporté par [Recueil], n°[numéro]".
+- **Verset du Coran** : Traduction exacte. Source = "Sourate [Nom] ([numéro]), verset [numéro]".
+- **Verset coranique recherché par IA** : Trouve un verset correspondant au thème. Même format que Coran.
+- **Ramadan** : Invocations (douas), hadiths sur le jeûne, la prière nocturne (Tarawih), Laylat al-Qadr. Toujours authentique.
 
 Réponds EXCLUSIVEMENT en JSON sous ce format :
 {
-  "content": "Le texte exact et authentique de la citation.",
-  "source": "La source précise (ex: Rapporté par Muslim, 2664 ou Sourate Al-Baqara, verset 183)"
+  "content": "Le texte exact et authentique.",
+  "source": "Sourate Al-Baqara (2), verset 183"
 }`;
 
   try {
