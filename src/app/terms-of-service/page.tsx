@@ -9,7 +9,7 @@ export default function TermsOfService() {
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b">
         <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-8">
-           <a href="/" className="text-xl font-bold bg-gradient-to-r from-tiktok-cyan to-tiktok-pink bg-clip-text text-transparent">HikmaClips</a>
+           <a href="/" className="text-xl font-bold bg-gradient-to-r from-islamic-green to-islamic-gold bg-clip-text text-transparent">HikmaClips</a>
         </div>
       </header>
       <main className="container mx-auto p-4 sm:p-8">

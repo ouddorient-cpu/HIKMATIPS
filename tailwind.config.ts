@@ -65,9 +65,9 @@ export default {
           border: 'hsl(var(--sidebar-border))',
           ring: 'hsl(var(--sidebar-ring))',
         },
-        tiktok: {
-          pink: '#ff0050',
-          cyan: '#00f2ea',
+        islamic: {
+          green: '#2E7D32',
+          gold: '#D4A843',
         },
       },
       borderRadius: {

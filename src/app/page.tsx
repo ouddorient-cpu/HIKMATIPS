@@ -344,7 +344,10 @@ export default function Home() {
     <div className="min-h-screen w-full bg-background flex flex-col">
       <header className="border-b">
         <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-8">
-          <h1 className="text-xl font-bold text-hikma-gradient italic">HikmaClips</h1>
+          <div className="flex items-center gap-2">
+            <Image src="https://res.cloudinary.com/dhjwimevi/image/upload/v1770072891/ChatGPT_Image_2_f%C3%A9vr._2026_23_43_44_edeg9a.png" alt="HikmaClips" width={36} height={36} className="rounded-lg" />
+            <h1 className="text-xl font-bold text-hikma-gradient">HikmaClips</h1>
+          </div>
           <div className="flex items-center gap-4">
             {isUserLoading ? (
               <Loader2 className="animate-spin" />
