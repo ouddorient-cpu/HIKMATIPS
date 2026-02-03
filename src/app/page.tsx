@@ -89,7 +89,7 @@ const fontFamilies: Record<FontFamily, { name: string; style: string; label: str
 
 export default function Home() {
   const [content, setContent] = useState<Content | null>(null);
-  const [category, setCategory] = useState<Category>('hadith');
+  const [category, setCategory] = useState<Category>('coran');
   const [format, setFormat] = useState<Format>('story');
   const [textTheme, setTextTheme] = useState<TextTheme>('white');
   const [fontSize, setFontSize] = useState(24);
@@ -100,7 +100,7 @@ export default function Home() {
   const [animationKey, setAnimationKey] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
   const [topic, setTopic] = useState('');
-  const [creatorSignature, setCreatorSignature] = useState('@habibi_muslim');
+  const [creatorSignature, setCreatorSignature] = useState('@Hikmaclips');
   const [generationCount, setGenerationCount] = useState(0);
   const [showSignInPopup, setShowSignInPopup] = useState(false);
   const [showWelcomePopup, setShowWelcomePopup] = useState(false);
@@ -404,7 +404,7 @@ export default function Home() {
               </CardHeader>
               <CardContent>
                 <RadioGroup
-                  defaultValue="hadith"
+                  defaultValue="coran"
                   className="grid grid-cols-2 md:grid-cols-4 gap-4"
                   onValueChange={(value: string) => setCategory(value as Category)}
                 >

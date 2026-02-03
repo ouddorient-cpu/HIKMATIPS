@@ -8,8 +8,8 @@ export const metadata: Metadata = {
   title: "HikmaClips",
   description: "Créez de belles vidéos de sagesse pour les médias sociaux.",
   icons: {
-    icon: "https://res.cloudinary.com/dhjwimevi/image/upload/v1770072891/ChatGPT_Image_2_f%C3%A9vr._2026_23_43_44_edeg9a.png",
-    apple: "https://res.cloudinary.com/dhjwimevi/image/upload/v1770072891/ChatGPT_Image_2_f%C3%A9vr._2026_23_43_44_edeg9a.png",
+    icon: "https://res.cloudinary.com/db2ljqpdt/image/upload/v1770108678/ChatGPT_Image_2_f%C3%A9vr._2026_23_43_44_qmfwbc.png",
+    apple: "https://res.cloudinary.com/db2ljqpdt/image/upload/v1770108678/ChatGPT_Image_2_f%C3%A9vr._2026_23_43_44_qmfwbc.png",
   },
 };
 
