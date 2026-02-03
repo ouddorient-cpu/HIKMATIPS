@@ -88,7 +88,7 @@ export default function ParametresPage() {
           <CardContent className="space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Version</span>
-              <span className="font-medium">1.0.3</span>
+              <span className="font-medium">1.0.4</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Développeur</span>
