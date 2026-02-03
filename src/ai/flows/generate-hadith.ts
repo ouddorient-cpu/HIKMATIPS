@@ -32,38 +32,78 @@ export async function generateHadith(
     throw new Error("Clé API Gemini manquante. Veuillez configurer NEXT_PUBLIC_GOOGLE_GENAI_API_KEY.");
   }
 
-  const prompt = `Tu es un savant rigoureux en sciences islamiques selon la voie de la Sounna (Ahl as-Sounna wal-Jama'a).
-Ton objectif est de fournir une citation ou un conseil court pour la catégorie : ${label}.
-${topic ? `Thème : ${topic}.` : 'Choisis un thème inspirant.'}
+  // Prompts spécifiques par catégorie pour de meilleurs résultats
+  const getPromptByCategory = () => {
+    const baseRules = `### RÈGLES OBLIGATOIRES :
+- Utilise TOUJOURS "Allah" (JAMAIS "Dieu").
+- Après le Prophète Muhammad, ajoute "(ﷺ)".
+- LANGUE : Français uniquement.
+- Réponds UNIQUEMENT en JSON valide.`;
 
-### RÈGLES ABSOLUES DE LA SOUNNA :
-- Utilise TOUJOURS "Allah" (JAMAIS "Dieu", "le Seigneur" ou toute autre substitution).
-- Après CHAQUE mention du Prophète Muhammad, ajoute OBLIGATOIREMENT "(ﷺ)".
-- Après CHAQUE mention d'un autre prophète (Ibrahim, Moussa, Issa, etc.), ajoute "(عليه السلام)".
-- Pour les compagnons (Sahaba), ajoute "(رضي الله عنه)" ou "(رضي الله عنها)" la première fois.
-- N'INVENTE RIEN. Ne génère AUCUN hadith ou verset qui n'existe pas réellement.
+    if (category === 'hadith') {
+      return `Tu es un spécialiste des hadiths authentiques. Donne-moi UN hadith CÉLÈBRE et AUTHENTIQUE.
+${topic ? `Thème souhaité : ${topic}` : 'Choisis parmi les thèmes : bonté, patience, prière, parents, science, sincérité, frères en Islam.'}
 
-### AUTHENTICITÉ - RÈGLE LA PLUS IMPORTANTE :
-1. **HADITHS** : Cite UNIQUEMENT des hadiths AUTHENTIQUES (Sahih). Privilégie Sahih al-Boukhari et Sahih Muslim. Tu peux aussi citer Sunan Abi Dawud, at-Tirmidhi, an-Nasa'i ou Ibn Majah SEULEMENT si le hadith est classé Sahih ou Hasan. INTERDICTION de citer un hadith faible (Da'if) ou inventé (Mawdou').
-2. **CORAN** : Cite le texte EXACT du verset traduit en français. La source DOIT suivre le format : "Sourate [Nom] ([Numéro]), verset [Numéro]". Exemple : "Sourate Al-Baqara (2), verset 183".
-3. **ZÉRO INVENTION** : Si tu n'es pas sûr de l'authenticité d'un texte, NE LE CITE PAS. Choisis un autre texte dont tu es certain.
+${baseRules}
 
-### FORMAT DE RÉPONSE :
-- Le champ "content" contient UNIQUEMENT le texte original (hadith, verset ou conseil). AUCUN commentaire personnel.
-- Le champ "source" contient UNIQUEMENT la référence précise.
-- LANGUE : Tout en Français.
+### EXEMPLES DE HADITHS AUTHENTIQUES À UTILISER :
+- "Les actes ne valent que par les intentions..." (Boukhari 1, Muslim 1907)
+- "Aucun de vous ne sera véritablement croyant tant qu'il n'aimera pas pour son frère ce qu'il aime pour lui-même." (Boukhari 13, Muslim 45)
+- "Le meilleur d'entre vous est celui qui apprend le Coran et l'enseigne." (Boukhari 5027)
+- "Celui qui croit en Allah et au Jour Dernier, qu'il dise du bien ou qu'il se taise." (Boukhari 6018, Muslim 47)
+- "Le Paradis se trouve sous les pieds des mères." (Nasa'i 3104)
+- "La propreté fait partie de la foi." (Muslim 223)
+- "Le sourire à ton frère est une aumône." (Tirmidhi 1956)
 
-### RÈGLES PAR CATÉGORIE :
-- **Hadith** : Texte authentique uniquement. Source = "Rapporté par [Recueil], n°[numéro]".
-- **Verset du Coran** : Traduction exacte. Source = "Sourate [Nom] ([numéro]), verset [numéro]".
-- **Verset coranique recherché par IA** : Trouve un verset correspondant au thème. Même format que Coran.
-- **Ramadan** : Invocations (douas), hadiths sur le jeûne, la prière nocturne (Tarawih), Laylat al-Qadr. Toujours authentique.
+Choisis un hadith CONNU et donne sa référence exacte.
 
-Réponds EXCLUSIVEMENT en JSON sous ce format :
 {
-  "content": "Le texte exact et authentique.",
-  "source": "Sourate Al-Baqara (2), verset 183"
+  "content": "Le hadith en français",
+  "source": "Rapporté par Boukhari, n°XXXX"
 }`;
+    }
+
+    if (category === 'ramadan') {
+      return `Tu es un spécialiste du Ramadan. Donne-moi UN hadith ou UNE invocation AUTHENTIQUE sur le Ramadan.
+${topic ? `Thème : ${topic}` : 'Choisis parmi : jeûne, iftar, suhur, Laylat al-Qadr, prière de nuit, récompenses du Ramadan.'}
+
+${baseRules}
+
+### EXEMPLES AUTHENTIQUES SUR LE RAMADAN :
+- "Celui qui jeûne le Ramadan avec foi et en espérant la récompense d'Allah, ses péchés passés lui seront pardonnés." (Boukhari 38, Muslim 760)
+- "Celui qui prie durant les nuits de Ramadan avec foi et espérance, ses péchés passés lui seront pardonnés." (Boukhari 37, Muslim 759)
+- "Quand arrive le Ramadan, les portes du Paradis sont ouvertes, les portes de l'Enfer sont fermées et les démons sont enchaînés." (Boukhari 1899, Muslim 1079)
+- "Celui qui donne à manger à un jeûneur pour rompre son jeûne aura la même récompense que lui." (Tirmidhi 807)
+- Invocation de rupture du jeûne : "Dhahaba adh-dhama'u, wabtallatil-'urûqu, wa thabatal-ajru in shâ'Allâh" (La soif est partie, les veines sont humides, et la récompense est confirmée si Allah le veut) (Abu Dawud 2357)
+
+{
+  "content": "Le hadith ou l'invocation en français",
+  "source": "Rapporté par Boukhari, n°XXXX"
+}`;
+    }
+
+    if (category === 'coran' || category === 'recherche-ia') {
+      return `Donne-moi UN verset du Coran en français.
+${topic ? `Thème recherché : ${topic}` : 'Choisis un verset inspirant sur : foi, patience, miséricorde, gratitude, ou guidée.'}
+
+${baseRules}
+
+### FORMAT OBLIGATOIRE :
+{
+  "content": "Le verset traduit en français",
+  "source": "Sourate Al-Nom (numéro), verset numéro"
+}`;
+    }
+
+    return `Donne-moi une citation islamique authentique sur ${topic || 'un thème inspirant'}.
+${baseRules}
+{
+  "content": "Le texte",
+  "source": "La source"
+}`;
+  };
+
+  const prompt = getPromptByCategory();
 
   try {
     const response = await fetch(
@@ -75,8 +115,14 @@ Réponds EXCLUSIVEMENT en JSON sous ce format :
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: {
             response_mime_type: 'application/json',
-            temperature: 1
-          }
+            temperature: 0.7
+          },
+          safetySettings: [
+            { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+          ]
         }),
       }
     );
