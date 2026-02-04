@@ -3,11 +3,10 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, LogIn } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 
 interface OnboardingScreenProps {
   onComplete: () => void;
-  onSignIn: () => void;
 }
 
 // Illustration SVG 1 - Livre sacré avec lumière
@@ -337,18 +336,12 @@ const slides = [
   },
 ];
 
-export default function OnboardingScreen({ onComplete, onSignIn }: OnboardingScreenProps) {
+export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
 
   const nextSlide = () => {
     if (currentSlide < slides.length - 1) {
       setCurrentSlide(currentSlide + 1);
-    }
-  };
-
-  const prevSlide = () => {
-    if (currentSlide > 0) {
-      setCurrentSlide(currentSlide - 1);
     }
   };
 
@@ -439,22 +432,13 @@ export default function OnboardingScreen({ onComplete, onSignIn }: OnboardingScr
         {/* Buttons */}
         <div className="flex flex-col gap-3">
           {isLastSlide ? (
-            <>
-              <Button
-                onClick={onSignIn}
-                className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 py-6 text-lg font-semibold"
-              >
-                <LogIn className="mr-2 h-5 w-5" />
-                Se connecter avec Google
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={onComplete}
-                className="w-full text-muted-foreground"
-              >
-                Continuer sans compte
-              </Button>
-            </>
+            <Button
+              onClick={onComplete}
+              className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 py-6 text-lg font-semibold"
+            >
+              Commencer
+              <ChevronRight className="ml-2 h-5 w-5" />
+            </Button>
           ) : (
             <Button
               onClick={nextSlide}

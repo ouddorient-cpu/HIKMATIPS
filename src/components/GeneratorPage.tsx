@@ -97,11 +97,6 @@ export default function GeneratorPage() {
     setShowOnboarding(false);
   };
 
-  const handleSignInFromOnboarding = async () => {
-    await handleSignIn();
-    handleCompleteOnboarding();
-  };
-
   const previewRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const { user, isUserLoading } = useUser();
@@ -376,7 +371,6 @@ export default function GeneratorPage() {
     return (
       <OnboardingScreen
         onComplete={handleCompleteOnboarding}
-        onSignIn={handleSignInFromOnboarding}
       />
     );
   }
