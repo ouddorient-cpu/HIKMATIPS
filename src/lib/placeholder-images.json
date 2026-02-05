@@ -3,8 +3,8 @@
     {
       "id": "hikma-default",
       "description": "HikmaClips default background.",
-      "imageUrl": "https://res.cloudinary.com/db2ljqpdt/image/upload/v1769944784/grok_image_1769332087344_mgthkt.jpg",
-      "imageHint": "islamic art"
+      "imageUrl": "https://res.cloudinary.com/dzagwz94z/image/upload/v1769534516/7c497dc7ce68b24404990213d4f9b486_wjy0dm.jpg",
+      "imageHint": "islamic coran mosque"
     },
     {
       "id": "islamic-1",
@@ -251,6 +251,60 @@
       "description": "Blue hour sky.",
       "imageUrl": "https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?w=1080",
       "imageHint": "night sky abstract"
+    },
+    {
+      "id": "kaaba-32",
+      "description": "Kaaba at night.",
+      "imageUrl": "https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?w=1080",
+      "imageHint": "kaaba islam mosque"
+    },
+    {
+      "id": "mosque-33",
+      "description": "Grand mosque interior.",
+      "imageUrl": "https://images.unsplash.com/photo-1564769625905-50e93615e769?w=1080",
+      "imageHint": "mosque islam coran"
+    },
+    {
+      "id": "coran-34",
+      "description": "Quran with light.",
+      "imageUrl": "https://images.unsplash.com/photo-1609599006353-e629aaabfeae?w=1080",
+      "imageHint": "coran islam mosque"
+    },
+    {
+      "id": "mosque-35",
+      "description": "Mosque with palm trees.",
+      "imageUrl": "https://images.unsplash.com/photo-1542816417-0983c9c9ad53?w=1080",
+      "imageHint": "mosque islam musulman"
+    },
+    {
+      "id": "islamic-36",
+      "description": "Islamic geometric pattern.",
+      "imageUrl": "https://images.unsplash.com/photo-1585036156171-384164a8c675?w=1080",
+      "imageHint": "islam coran mosque"
+    },
+    {
+      "id": "mosque-37",
+      "description": "Sultan Ahmed Mosque.",
+      "imageUrl": "https://images.unsplash.com/photo-1541788360-1af30bed7bf5?w=1080",
+      "imageHint": "mosque islam musulman"
+    },
+    {
+      "id": "islamic-38",
+      "description": "Islamic calligraphy art.",
+      "imageUrl": "https://images.unsplash.com/photo-1573090867324-2c4e02809079?w=1080",
+      "imageHint": "coran islam calligraphy"
+    },
+    {
+      "id": "mosque-39",
+      "description": "Mosque dome golden.",
+      "imageUrl": "https://images.unsplash.com/photo-1565362676315-f3f1b1e92f89?w=1080",
+      "imageHint": "mosque islam musulman"
+    },
+    {
+      "id": "kaaba-40",
+      "description": "Kaaba pilgrimage view.",
+      "imageUrl": "https://images.unsplash.com/photo-1580418827493-f2b22c0a76cb?w=1080",
+      "imageHint": "kaaba islam mosque"
     }
   ]
 }

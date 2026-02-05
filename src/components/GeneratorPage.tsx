@@ -66,7 +66,7 @@ type Content = {
   source: string;
 };
 
-type Category = 'hadith' | 'ramadan' | 'recherche-ia' | 'coran';
+type Category = 'hadith' | 'ramadan' | 'thematique' | 'coran';
 
 export default function GeneratorPage() {
   const [content, setContent] = useState<Content | null>(null);
@@ -83,7 +83,7 @@ export default function GeneratorPage() {
 
   // Fixed values for simplified mode
   const fontSize = 24;
-  const creatorSignature = '@Hikmaclips';
+  const creatorSignature = 'hikmaclips.woosenteur.fr';
 
   useEffect(() => {
     const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding');
@@ -246,7 +246,7 @@ export default function GeneratorPage() {
   const handleRandomBackground = () => {
     const relevantImages = PlaceHolderImages.filter(img => {
       const hint = img.imageHint.toLowerCase();
-      if (category === 'hadith' || category === 'coran' || category === 'recherche-ia') {
+      if (category === 'hadith' || category === 'coran' || category === 'thematique') {
         return hint.includes('islamic') || hint.includes('nature') || hint.includes('serene') || hint.includes('abstract');
       }
       if (category === 'ramadan') {
@@ -476,13 +476,13 @@ export default function GeneratorPage() {
                     </Label>
                   </div>
                   <div>
-                    <RadioGroupItem value="recherche-ia" id="recherche-ia" className="peer sr-only" />
+                    <RadioGroupItem value="thematique" id="thematique" className="peer sr-only" />
                     <Label
-                      htmlFor="recherche-ia"
+                      htmlFor="thematique"
                       className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-primary/10 hover:text-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground transition-smooth"
                     >
                       <Search className="mb-3 h-6 w-6" />
-                      Recherche IA
+                      Thématique
                     </Label>
                   </div>
                 </RadioGroup>
@@ -530,7 +530,7 @@ export default function GeneratorPage() {
                   Générer le contenu
                 </CardTitle>
                 <CardDescription>
-                  Décrivez un thème (ex. "patience", "nutrition"). Laissez vide pour un thème aléatoire.
+                  Décrivez un thème (ex. "patience", "foi"). Laissez vide pour un thème aléatoire.
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col gap-4">

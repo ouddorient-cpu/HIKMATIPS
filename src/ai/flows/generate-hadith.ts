@@ -62,7 +62,7 @@ function filterByTopic<T extends { content: string; category: string }>(
 const categoryLabels = {
   hadith: 'Hadith',
   ramadan: 'Conseil ou invocation du Ramadan',
-  'recherche-ia': 'Verset coranique recherché par IA',
+  'thematique': 'Verset coranique recherché par IA',
   coran: 'Verset du Coran',
 };
 
@@ -153,7 +153,7 @@ ${baseRules}
 }`;
     }
 
-    if (category === 'coran' || category === 'recherche-ia') {
+    if (category === 'coran' || category === 'thematique') {
       return `Donne-moi UN verset du Coran en français.
 ${topic ? `Thème recherché : ${topic}` : 'Choisis un verset inspirant sur : foi, patience, miséricorde, gratitude, ou guidée.'}
 
@@ -223,8 +223,8 @@ export async function generateHadith(
 ): Promise<GenerateHadithOutput> {
   const { category, topic } = input;
 
-  // Pour "recherche-ia" avec un thème spécifique, toujours utiliser l'IA
-  if (category === 'recherche-ia' && topic && topic.trim() !== '') {
+  // Pour "thematique" avec un thème spécifique, toujours utiliser l'IA
+  if (category === 'thematique' && topic && topic.trim() !== '') {
     try {
       return await generateFromAI(category, topic);
     } catch (error) {
