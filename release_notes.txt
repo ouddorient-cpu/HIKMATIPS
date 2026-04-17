@@ -1,0 +1,4 @@
+Version 1.2.40 (Code 64)
+- Fix: Ajout de la logique de fallback AI pour la catégorie "Citadelle du Musulman"
+- Fix: Correction de la génération si la base locale est inaccessible
+- UI: Amélioration de la stabilité de la sélection de catégorie
