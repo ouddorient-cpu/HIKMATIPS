@@ -1,0 +1,364 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* HikmaClips — Emerald & Oriental Gold Theme */
+    --background: 150 20% 97%;
+    --foreground: 160 30% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 160 30% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 160 30% 10%;
+
+    /* Primary — Emerald Green #10B981 */
+    --primary: 160 84% 39%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary — Deep Emerald #059669 */
+    --secondary: 161 94% 30%;
+    --secondary-foreground: 0 0% 100%;
+
+    /* Accent — Oriental Gold #F0C040 */
+    --accent: 45 86% 60%;
+    --accent-foreground: 160 30% 10%;
+
+    /* Muted */
+    --muted: 150 15% 92%;
+    --muted-foreground: 150 10% 40%;
+
+    /* Border & Input */
+    --border: 150 20% 85%;
+    --input: 150 20% 85%;
+    --ring: 160 84% 39%;
+
+    --radius: 9999px;
+
+    --chart-1: 160 84% 39%;
+    --chart-2: 45 86% 60%;
+  }
+
+  .dark {
+    /* Hikma Dark — Deep Forest Emerald */
+    --background: 160 30% 5%;
+    --foreground: 0 0% 98%;
+    --card: 160 25% 7%;
+    --card-foreground: 0 0% 98%;
+    --popover: 160 25% 8%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 160 84% 39%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 160 20% 12%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 160 15% 15%;
+    --muted-foreground: 160 10% 65%;
+    --accent: 45 86% 60%;
+    --accent-foreground: 160 30% 10%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 160 15% 12%;
+    --input: 160 15% 12%;
+    --ring: 160 84% 39%;
+    --radius: 1.25rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html,
+  body {
+    @apply bg-background text-foreground;
+    overflow-x: hidden;
+    position: relative;
+    width: 100%;
+    /* Apple-style system fonts */
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Typography */
+  h1 {
+    @apply text-3xl font-bold tracking-tight;
+    letter-spacing: -0.5px;
+  }
+
+  h2 {
+    @apply text-2xl font-semibold tracking-tight;
+    letter-spacing: -0.3px;
+  }
+
+  h3 {
+    @apply text-xl font-semibold;
+    letter-spacing: -0.2px;
+  }
+}
+
+@layer components {
+
+  /* Hikma-style Shadows */
+  .shadow-hikma-sm {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  .shadow-hikma {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .shadow-hikma-lg {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Glassmorphism Effect */
+  .glass {
+    background: rgba(19, 34, 56, 0.6);
+    border: 1px solid rgba(212, 168, 67, 0.15);
+    backdrop-filter: blur(10px);
+  }
+
+  /* Smooth Transitions */
+  .transition-smooth {
+    @apply transition-all duration-300 ease-in-out;
+  }
+
+  /* Press Feedback */
+  .btn-press {
+    @apply active:scale-95 transition-transform duration-150;
+  }
+
+  /* Force rounded for all buttons by default */
+  button,
+  .button {
+    @apply rounded-full;
+  }
+
+  /* Global Hover Effects */
+  .hover-green:hover {
+    @apply bg-emerald-600 text-white border-emerald-600 !important;
+  }
+
+  .hover-orange:hover {
+    @apply bg-orange-500 text-white border-orange-500 !important;
+  }
+
+  /* Safe Area Padding for Mobile */
+  .safe-area-top {
+    padding-top: max(1rem, env(safe-area-inset-top));
+  }
+
+  .safe-area-bottom {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  .safe-area {
+    padding-top: max(1rem, env(safe-area-inset-top));
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+
+  /* Loading Skeleton */
+  .skeleton {
+    @apply bg-muted rounded-lg animate-pulse;
+  }
+
+  /* Badge */
+  .badge {
+    @apply inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary;
+  }
+
+  .badge-secondary {
+    @apply bg-secondary/10 text-secondary;
+  }
+}
+
+@layer utilities {
+
+  /* Backdrop Blur */
+  .backdrop-blur-sm {
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    backdrop-filter: blur(16px) saturate(180%);
+  }
+
+  .backdrop-blur {
+    backdrop-filter: blur(10px);
+  }
+
+  .backdrop-blur-lg {
+    backdrop-filter: blur(20px);
+  }
+
+  /* Arabic Typography */
+  .font-arabic {
+    font-family: 'Amiri', 'Noto Naskh Arabic', serif;
+  }
+
+  /* Immersive Layout Utilities */
+  .layout-immersive {
+    @apply h-screen overflow-hidden flex flex-col relative;
+  }
+
+  .sidebar-glass {
+    @apply glass border-r border-accent/20 h-full backdrop-blur-xl z-50;
+  }
+
+  .bottom-bar-glass {
+    @apply glass border-t border-accent/20 backdrop-blur-xl z-40;
+  }
+
+  .preview-container {
+    @apply flex-1 flex items-center justify-center overflow-hidden p-4;
+  }
+
+  /* Custom Scrollbar for sidebars if needed */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-primary/20 rounded-full;
+  }
+
+  /* Islamic Calligraphy Background Pattern */
+  .dark .bg-islamic-pattern {
+    background-image: radial-gradient(circle at 2px 2px, rgba(46, 125, 50, 0.05) 1px, transparent 0);
+    background-size: 24px 24px;
+    position: relative;
+  }
+
+  .dark .bg-islamic-pattern::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: url('https://www.transparenttextures.com/patterns/arabesque.png');
+    opacity: 0.03;
+    pointer-events: none;
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-in-out;
+  }
+}
+
+/* Mobile Specific */
+@media (max-width: 640px) {
+  body {
+    font-size: 16px;
+  }
+
+  h1 {
+    @apply text-2xl;
+  }
+
+  h2 {
+    @apply text-xl;
+  }
+}
+
+/* Very Small Screens - Prevent Overflow */
+@media (max-width: 375px) {
+  body {
+    font-size: 15px;
+  }
+
+  h1 {
+    @apply text-xl;
+  }
+
+  h2 {
+    @apply text-lg;
+  }
+
+  /* Ensure header elements don't overflow */
+  header .container {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Islamic gradient (Emerald → Oriental Gold) */
+.text-tiktok-gradient {
+  background: linear-gradient(to right, #10B981, #F0C040);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  display: inline-block;
+}
+
+/* HikmaClips brand gradient (Emerald → Oriental Gold) */
+.text-hikma-gradient {
+  background: linear-gradient(135deg, #10B981, #F0C040);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  display: inline-block;
+}
+
+/* Pulse soft animation */
+@keyframes pulseSoft {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.animate-pulse-soft {
+  animation: pulseSoft 2s ease-in-out infinite;
+}
+
+/* Base Body Styles for Redesign */
+body {
+  @apply min-h-screen bg-gradient-to-br from-emerald-50 to-yellow-50 dark:from-emerald-950 dark:to-emerald-900;
+}

@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head><title>HikmaClips Icon Generator</title></head>
+<body style="background:#222;display:flex;flex-direction:column;align-items:center;gap:20px;padding:40px;font-family:sans-serif;color:white">
+<h2>HikmaClips - Assets Generator</h2>
+<div>
+  <h3>1. Icone App (512x512)</h3>
+  <canvas id="icon" width="512" height="512"></canvas>
+  <br><button onclick="download('icon','hikmaclips-icon-512.png')">Telecharger Icone 512x512</button>
+</div>
+<div>
+  <h3>2. Feature Graphic (1024x500)</h3>
+  <canvas id="feature" width="1024" height="500"></canvas>
+  <br><button onclick="download('feature','hikmaclips-feature-1024x500.png')">Telecharger Feature Graphic</button>
+</div>
+
+<script>
+// ===== ICON 512x512 =====
+function drawIcon() {
+  const c = document.getElementById('icon');
+  const ctx = c.getContext('2d');
+  const w = 512, h = 512;
+
+  // Background gradient
+  const bg = ctx.createLinearGradient(0, 0, w, h);
+  bg.addColorStop(0, '#1a1a2e');
+  bg.addColorStop(0.5, '#16213e');
+  bg.addColorStop(1, '#0f3460');
+  ctx.fillStyle = bg;
+  ctx.beginPath();
+  ctx.roundRect(0, 0, w, h, 80);
+  ctx.fill();
+
+  // Decorative geometric pattern (Islamic-inspired)
+  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 8; i++) {
+    const r = 60 + i * 30;
+    ctx.beginPath();
+    ctx.arc(w/2, h/2, r, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  // Star pattern
+  ctx.strokeStyle = 'rgba(0,242,234,0.1)';
+  ctx.lineWidth = 1.5;
+  for (let i = 0; i < 8; i++) {
+    const angle = (i / 8) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.moveTo(w/2, h/2);
+    ctx.lineTo(w/2 + Math.cos(angle) * 200, h/2 + Math.sin(angle) * 200);
+    ctx.stroke();
+  }
+
+  // Crescent moon
+  ctx.fillStyle = '#00f2ea';
+  ctx.beginPath();
+  ctx.arc(w/2 - 20, h/2 - 80, 70, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#16213e';
+  ctx.beginPath();
+  ctx.arc(w/2 + 10, h/2 - 95, 60, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Star next to crescent
+  drawStar(ctx, w/2 + 50, h/2 - 110, 5, 15, 7);
+
+  // Book icon
+  ctx.fillStyle = '#ff0050';
+  ctx.beginPath();
+  ctx.moveTo(w/2 - 50, h/2 + 20);
+  ctx.lineTo(w/2, h/2 + 5);
+  ctx.lineTo(w/2 + 50, h/2 + 20);
+  ctx.lineTo(w/2 + 50, h/2 + 70);
+  ctx.lineTo(w/2, h/2 + 55);
+  ctx.lineTo(w/2 - 50, h/2 + 70);
+  ctx.closePath();
+  ctx.fill();
+
+  // Book spine
+  ctx.strokeStyle = '#ff0050';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(w/2, h/2 + 5);
+  ctx.lineTo(w/2, h/2 + 55);
+  ctx.stroke();
+
+  // Text "HikmaClips"
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  // Main text with gradient
+  const textGrad = ctx.createLinearGradient(w/2 - 120, 0, w/2 + 120, 0);
+  textGrad.addColorStop(0, '#ff0050');
+  textGrad.addColorStop(1, '#00f2ea');
+
+  ctx.font = 'bold 52px Arial, sans-serif';
+  ctx.fillStyle = textGrad;
+  ctx.fillText('HikmaClips', w/2, h/2 + 120);
+
+  // Subtitle
+  ctx.font = '22px Arial, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  ctx.fillText('حكمة • Sagesse', w/2, h/2 + 160);
+
+  // Accent border
+  ctx.strokeStyle = '#ff0050';
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.roundRect(8, 8, w-16, h-16, 76);
+  ctx.stroke();
+
+  ctx.strokeStyle = '#00f2ea';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.roundRect(14, 14, w-28, h-28, 72);
+  ctx.stroke();
+}
+
+function drawStar(ctx, cx, cy, spikes, outerR, innerR) {
+  ctx.fillStyle = '#00f2ea';
+  ctx.beginPath();
+  for (let i = 0; i < spikes * 2; i++) {
+    const r = i % 2 === 0 ? outerR : innerR;
+    const angle = (i / (spikes * 2)) * Math.PI * 2 - Math.PI / 2;
+    const x = cx + Math.cos(angle) * r;
+    const y = cy + Math.sin(angle) * r;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.fill();
+}
+
+// ===== FEATURE GRAPHIC 1024x500 =====
+function drawFeature() {
+  const c = document.getElementById('feature');
+  const ctx = c.getContext('2d');
+  const w = 1024, h = 500;
+
+  // Background
+  const bg = ctx.createLinearGradient(0, 0, w, h);
+  bg.addColorStop(0, '#0f0f23');
+  bg.addColorStop(0.4, '#1a1a2e');
+  bg.addColorStop(0.7, '#16213e');
+  bg.addColorStop(1, '#0f3460');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, w, h);
+
+  // Geometric patterns
+  ctx.strokeStyle = 'rgba(0,242,234,0.08)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 12; i++) {
+    ctx.beginPath();
+    ctx.arc(w * 0.75, h * 0.5, 40 + i * 25, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  // Left side - text
+  ctx.textAlign = 'left';
+
+  // App name
+  const nameGrad = ctx.createLinearGradient(60, 0, 450, 0);
+  nameGrad.addColorStop(0, '#ff0050');
+  nameGrad.addColorStop(1, '#00f2ea');
+  ctx.font = 'bold 72px Arial, sans-serif';
+  ctx.fillStyle = nameGrad;
+  ctx.fillText('HikmaClips', 60, 180);
+
+  // Tagline
+  ctx.font = '32px Arial, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.9)';
+  ctx.fillText('Sagesse islamique pour', 60, 240);
+  ctx.fillText('vos réseaux sociaux', 60, 280);
+
+  // Features list
+  ctx.font = '20px Arial, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.6)';
+  const features = [
+    '✦ Hadiths authentiques & Versets du Coran',
+    '✦ Personnalisation complète (typo, taille, couleurs)',
+    '✦ Formats Story & Carré pour les réseaux',
+    '✦ Partage WhatsApp, Instagram, TikTok'
+  ];
+  features.forEach((f, i) => {
+    ctx.fillText(f, 60, 340 + i * 30);
+  });
+
+  // Right side - phone mockup
+  const px = 700, py = 50, pw = 200, ph = 400;
+
+  // Phone frame
+  ctx.fillStyle = '#222';
+  ctx.beginPath();
+  ctx.roundRect(px, py, pw, ph, 20);
+  ctx.fill();
+
+  // Phone screen
+  const screenGrad = ctx.createLinearGradient(px, py, px, py + ph);
+  screenGrad.addColorStop(0, '#1a1a2e');
+  screenGrad.addColorStop(1, '#0a0a1a');
+  ctx.fillStyle = screenGrad;
+  ctx.beginPath();
+  ctx.roundRect(px + 6, py + 6, pw - 12, ph - 12, 16);
+  ctx.fill();
+
+  // Phone content - simulated hadith card
+  ctx.fillStyle = 'rgba(255,0,80,0.2)';
+  ctx.beginPath();
+  ctx.roundRect(px + 20, py + 60, pw - 40, 200, 10);
+  ctx.fill();
+
+  ctx.textAlign = 'center';
+  ctx.font = 'italic 14px Arial';
+  ctx.fillStyle = 'white';
+  const lines = ['"La patience est', 'la moitié de', 'la foi."'];
+  lines.forEach((l, i) => ctx.fillText(l, px + pw/2, py + 120 + i * 22));
+
+  ctx.font = '11px Arial';
+  ctx.fillStyle = '#00f2ea';
+  ctx.fillText('— Sahih Muslim', px + pw/2, py + 200);
+
+  // Bottom accent line
+  const lineGrad = ctx.createLinearGradient(0, 0, w, 0);
+  lineGrad.addColorStop(0, '#ff0050');
+  lineGrad.addColorStop(1, '#00f2ea');
+  ctx.fillStyle = lineGrad;
+  ctx.fillRect(0, h - 4, w, 4);
+}
+
+function download(id, filename) {
+  const c = document.getElementById(id);
+  const a = document.createElement('a');
+  a.download = filename;
+  a.href = c.toDataURL('image/png');
+  a.click();
+}
+
+drawIcon();
+drawFeature();
+</script>
+</body>
+</html>
