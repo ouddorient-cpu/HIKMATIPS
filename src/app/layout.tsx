@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Toaster } from "@/components/ui/toaster";
+import { OfflineBanner } from "@/components/OfflineBanner";
 import { FirebaseClientProvider } from "@/firebase/client-provider";
 import { ClientLayout } from "@/components/ClientLayout";
 import "./globals.css";
@@ -74,6 +75,7 @@ export default function RootLayout({
                 </div>
               </ClientLayout>
             </ErrorBoundary>
+            <OfflineBanner />
             <Toaster />
           </ThemeProvider>
         </FirebaseClientProvider>

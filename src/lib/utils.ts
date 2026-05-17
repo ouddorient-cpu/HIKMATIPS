@@ -30,3 +30,48 @@ export function toggleFavorite(hikma: Hikma) {
   localStorage.setItem('hikma_favorites', JSON.stringify(newFavorites));
   return !exists;
 }
+
+// --- Streak & Stats System ---
+export interface UserStats {
+  streak: number;
+  lastVisit: string;
+  totalVisits: number;
+  favoritesCount: number;
+}
+
+function getToday(): string {
+  return new Date().toISOString().split('T')[0];
+}
+
+export function updateStreak(): UserStats {
+  if (typeof window === 'undefined') return { streak: 0, lastVisit: '', totalVisits: 0, favoritesCount: 0 };
+  try {
+    const raw = localStorage.getItem('hikma_user_stats');
+    const stats: UserStats = raw ? JSON.parse(raw) : { streak: 0, lastVisit: '', totalVisits: 0, favoritesCount: 0 };
+    const today = getToday();
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+    if (stats.lastVisit === today) return stats;
+    if (stats.lastVisit === yesterdayStr) stats.streak += 1;
+    else if (stats.lastVisit === '') stats.streak = 1;
+    else stats.streak = 1;
+    stats.lastVisit = today;
+    stats.totalVisits += 1;
+    stats.favoritesCount = getFavorites().length;
+    localStorage.setItem('hikma_user_stats', JSON.stringify(stats));
+    return stats;
+  } catch {
+    return { streak: 0, lastVisit: '', totalVisits: 0, favoritesCount: 0 };
+  }
+}
+
+export function getUserStats(): UserStats {
+  if (typeof window === 'undefined') return { streak: 0, lastVisit: '', totalVisits: 0, favoritesCount: 0 };
+  try {
+    const raw = localStorage.getItem('hikma_user_stats');
+    return raw ? JSON.parse(raw) : { streak: 0, lastVisit: '', totalVisits: 0, favoritesCount: 0 };
+  } catch {
+    return { streak: 0, lastVisit: '', totalVisits: 0, favoritesCount: 0 };
+  }
+}

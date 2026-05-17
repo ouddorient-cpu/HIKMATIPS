@@ -5,9 +5,11 @@ import { Card, CardContent } from "@/components/ui/card"
 import { motion, AnimatePresence } from "framer-motion"
 import { Heart, Share2, Trash2, Bookmark } from "lucide-react"
 import { getFavorites, toggleFavorite, Hikma } from "@/lib/utils"
+import { useToast } from "@/hooks/use-toast"
 
 export default function FavorisPage() {
     const [favorites, setFavorites] = useState<Hikma[]>([]);
+    const { toast } = useToast();
 
     useEffect(() => {
         setFavorites(getFavorites());
@@ -74,6 +76,15 @@ export default function FavorisPage() {
                                             <button
                                                 className="p-3 text-slate-500 hover:text-purple-600 transition-colors bg-slate-100 dark:bg-slate-800 rounded-full"
                                                 aria-label="Partager"
+                                                onClick={async () => {
+                                                    const text = `${hikma.fr}\n— ${hikma.source}\n\nvia HikmaClips`;
+                                                    if (navigator.share) {
+                                                        await navigator.share({ title: 'Sagesse Islamique', text });
+                                                    } else {
+                                                        await navigator.clipboard.writeText(text);
+                                                        toast({ title: 'Copié !', description: 'La citation a été copiée.' });
+                                                    }
+                                                }}
                                             >
                                                 <Share2 className="w-5 h-5" />
                                             </button>

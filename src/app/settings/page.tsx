@@ -13,6 +13,7 @@ import { useUser } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { useAuth } from '@/firebase';
 import { NotificationService } from '@/lib/notifications';
+import { getUserStats, type UserStats } from '@/lib/utils';
 
 const reminderTimes = {
   'Fajr': { hour: 5, minute: 30 },
@@ -26,6 +27,7 @@ export default function ParametresPage() {
   const [mounted, setMounted] = useState(false);
   const [notifications, setNotifications] = useState(true);
   const [selectedReminder, setSelectedReminder] = useState<string | null>(null);
+  const [stats, setStats] = useState<UserStats>({ streak: 0, lastVisit: '', totalVisits: 0, favoritesCount: 0 });
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
 
@@ -34,6 +36,7 @@ export default function ParametresPage() {
     checkNotificationStatus();
     const savedReminder = localStorage.getItem('hikma_reminder_time');
     if (savedReminder) setSelectedReminder(savedReminder);
+    setStats(getUserStats());
   }, []);
 
   const checkNotificationStatus = async () => {
@@ -184,6 +187,32 @@ export default function ParametresPage() {
                   Rappel actif : {selectedReminder} — {reminderTimes[selectedReminder as keyof typeof reminderTimes].hour}h{String(reminderTimes[selectedReminder as keyof typeof reminderTimes].minute).padStart(2, '0')}
                 </p>
               )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Stats Section */}
+        <Card className="border-none bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm rounded-3xl overflow-hidden shadow-xl shadow-slate-200/50 dark:shadow-none">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <span className="text-purple-500 text-xl">📊</span>
+              Mes Statistiques
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="text-center p-4 rounded-2xl bg-purple-50 dark:bg-purple-900/20">
+                <p className="text-2xl font-black text-purple-500">🔥 {stats.streak}</p>
+                <p className="text-xs text-muted-foreground mt-1 font-medium">Jours consécutifs</p>
+              </div>
+              <div className="text-center p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20">
+                <p className="text-2xl font-black text-emerald-500">{stats.totalVisits}</p>
+                <p className="text-xs text-muted-foreground mt-1 font-medium">Visites totales</p>
+              </div>
+              <div className="text-center p-4 rounded-2xl bg-rose-50 dark:bg-rose-900/20">
+                <p className="text-2xl font-black text-rose-500">❤️ {stats.favoritesCount}</p>
+                <p className="text-xs text-muted-foreground mt-1 font-medium">Favoris</p>
+              </div>
             </div>
           </CardContent>
         </Card>
