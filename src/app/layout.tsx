@@ -8,8 +8,27 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 export const metadata: Metadata = {
-  title: "HikmaClips",
-  description: "Partagez de belles images de sagesse islamique sur les réseaux sociaux.",
+  title: "HikmaClips — Sagesse Islamique Quotidienne",
+  description: "Découvrez des hadiths, versets coraniques et invocations authentiques générés par intelligence artificielle. Partagez la sagesse islamique avec de belles images.",
+  keywords: ["hadith", "islam", "coran", "sagesse", "hikma", "invocation", "dua", "rappel spirituel"],
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "HikmaClips",
+  },
+  openGraph: {
+    title: "HikmaClips — Sagesse Islamique Quotidienne",
+    description: "Hadiths, versets et invocations générés par IA pour votre rappel spirituel quotidien.",
+    type: "website",
+    locale: "fr_FR",
+    siteName: "HikmaClips",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "HikmaClips",
+    description: "Sagesse islamique quotidienne par IA",
+  },
   icons: {
     icon: "https://res.cloudinary.com/db2ljqpdt/image/upload/v1770108678/ChatGPT_Image_2_f%C3%A9vr._2026_23_43_44_qmfwbc.png",
     apple: "https://res.cloudinary.com/db2ljqpdt/image/upload/v1770108678/ChatGPT_Image_2_f%C3%A9vr._2026_23_43_44_qmfwbc.png",
@@ -30,6 +49,9 @@ export default function RootLayout({
   return (
     <html lang="fr" suppressHydrationWarning>
       <head>
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="theme-color" content="#10B981" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
+import { useRouter } from 'next/navigation';
 import { Settings, Moon, Sun, Shield, FileText, Info, ExternalLink, User, LogOut, Bell, Palette } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -13,16 +14,26 @@ import { signOut } from 'firebase/auth';
 import { useAuth } from '@/firebase';
 import { NotificationService } from '@/lib/notifications';
 
+const reminderTimes = {
+  'Fajr': { hour: 5, minute: 30 },
+  'Midi': { hour: 12, minute: 0 },
+  'Isha': { hour: 20, minute: 30 },
+};
+
 export default function ParametresPage() {
   const { theme, setTheme } = useTheme();
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [notifications, setNotifications] = useState(true);
+  const [selectedReminder, setSelectedReminder] = useState<string | null>(null);
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
 
   useEffect(() => {
     setMounted(true);
     checkNotificationStatus();
+    const savedReminder = localStorage.getItem('hikma_reminder_time');
+    if (savedReminder) setSelectedReminder(savedReminder);
   }, []);
 
   const checkNotificationStatus = async () => {
@@ -151,12 +162,28 @@ export default function ParametresPage() {
             <div className="space-y-3 pt-2">
               <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Moments Clés</Label>
               <div className="grid grid-cols-3 gap-2">
-                {['Fajr', 'Midi', 'Isha'].map((time) => (
-                  <Button key={time} variant="outline" size="sm" className="rounded-full h-10 border-purple-100 dark:border-purple-700 hover:bg-purple-50 dark:hover:bg-purple-800/20">
+                {(['Fajr', 'Midi', 'Isha'] as const).map((time) => (
+                  <Button
+                    key={time}
+                    variant={selectedReminder === time ? 'default' : 'outline'}
+                    size="sm"
+                    className="rounded-full h-10 border-purple-100 dark:border-purple-700 hover:bg-purple-50 dark:hover:bg-purple-800/20"
+                    onClick={async () => {
+                      const { hour, minute } = reminderTimes[time];
+                      await NotificationService.scheduleDailyReminder(hour, minute);
+                      localStorage.setItem('hikma_reminder_time', time);
+                      setSelectedReminder(time);
+                    }}
+                  >
                     {time}
                   </Button>
                 ))}
               </div>
+              {selectedReminder && (
+                <p className="text-xs text-muted-foreground text-center">
+                  Rappel actif : {selectedReminder} — {reminderTimes[selectedReminder as keyof typeof reminderTimes].hour}h{String(reminderTimes[selectedReminder as keyof typeof reminderTimes].minute).padStart(2, '0')}
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -171,13 +198,13 @@ export default function ParametresPage() {
           </CardHeader>
           <CardContent className="p-0">
             <div className="divide-y divide-purple-50 dark:divide-purple-800/30">
-              <button className="w-full h-14 px-6 flex items-center justify-between hover:bg-purple-50 dark:hover:bg-purple-800/10 transition-colors">
+              <button className="w-full h-14 px-6 flex items-center justify-between hover:bg-purple-50 dark:hover:bg-purple-800/10 transition-colors" onClick={() => router.push('/privacy-policy')}>
                 <span className="flex items-center gap-3 text-sm font-medium">
                   <FileText className="h-4 w-4" /> Politique de confidentialité
                 </span>
                 <ExternalLink className="h-4 w-4 opacity-30" />
               </button>
-              <button className="w-full h-14 px-6 flex items-center justify-between hover:bg-purple-50 dark:hover:bg-purple-800/10 transition-colors">
+              <button className="w-full h-14 px-6 flex items-center justify-between hover:bg-purple-50 dark:hover:bg-purple-800/10 transition-colors" onClick={() => router.push('/updates')}>
                 <span className="flex items-center gap-3 text-sm font-medium">
                   <Info className="h-4 w-4" /> À propos de HikmaClips
                 </span>

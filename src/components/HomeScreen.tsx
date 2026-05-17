@@ -23,7 +23,11 @@ import {
     BookMarked,
     BookOpen,
     Moon,
-    Loader2
+    Loader2,
+    ChevronLeft,
+    ChevronRight,
+    Play,
+    Pause
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { CloudinaryGallery } from "@/components/studio/CloudinaryGallery"
@@ -111,6 +115,13 @@ export function HomeScreen() {
     const [generationCount, setGenerationCount] = useState(0);
     const [buffer, setBuffer] = useState<HikmaData[]>([]);
     const [isBuffering, setIsBuffering] = useState(false);
+    const [hikmaHistory, setHikmaHistory] = useState<HikmaData[]>([ALL_MOCKS[0]]);
+    const [historyIndex, setHistoryIndex] = useState<number>(0);
+    const [isAutoScrolling, setIsAutoScrolling] = useState(false);
+    const historyIndexRef = useRef(0);
+    const autoScrollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const autoScrollFnRef = useRef<() => void>(() => {});
+    const isMountedRef = useRef(true);
 
     // Auth States
     const { user, isUserLoading } = useUser();
@@ -133,6 +144,15 @@ export function HomeScreen() {
     const { toast } = useToast();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const captureRef = useRef<HTMLDivElement>(null);
+
+    const setHikmaWithHistory = useCallback((newHikma: HikmaData) => {
+        const idx = historyIndexRef.current;
+        setHikmaHistory(prev => [...prev.slice(0, idx + 1), newHikma]);
+        const nextIdx = idx + 1;
+        setHistoryIndex(nextIdx);
+        historyIndexRef.current = nextIdx;
+        setCurrentHikma(newHikma);
+    }, []);
 
     const fetchToBuffer = async (cat: string, t: string) => {
         try {
@@ -159,7 +179,9 @@ export function HomeScreen() {
             const item = await fetchToBuffer(cat, t);
             if (item) newItems.push(item);
         }
+        if (!isMountedRef.current) return;
         setBuffer(prev => [...prev, ...newItems]);
+        if (!isMountedRef.current) return;
         setIsBuffering(false);
     }, [isBuffering]);
 
@@ -174,7 +196,7 @@ export function HomeScreen() {
             const nextItem = buffer[0];
             const remaining = buffer.slice(1);
             setBuffer(remaining);
-            setCurrentHikma(nextItem);
+            setHikmaWithHistory(nextItem);
 
             if (!user) {
                 setGenerationCount(prev => prev + 1);
@@ -192,7 +214,7 @@ export function HomeScreen() {
         try {
             const result = await generateHadith({ category: selectedCategory as any, topic });
             if (result && result.content) {
-                setCurrentHikma({
+                setHikmaWithHistory({
                     arabe: result.arabe || "",
                     fr: result.content,
                     source: result.source,
@@ -266,6 +288,45 @@ export function HomeScreen() {
         handleShuffleBackground();
     }, [handleGenerateAiContent, handleShuffleBackground]);
 
+    const handlePrev = useCallback(() => {
+        if (historyIndex > 0) {
+            const prevIdx = historyIndex - 1;
+            historyIndexRef.current = prevIdx;
+            setHistoryIndex(prevIdx);
+            setCurrentHikma(hikmaHistory[prevIdx]);
+            handleShuffleBackground();
+        }
+    }, [historyIndex, hikmaHistory, handleShuffleBackground]);
+
+    const handleNext = useCallback(() => {
+        if (historyIndex < hikmaHistory.length - 1) {
+            const nextIdx = historyIndex + 1;
+            historyIndexRef.current = nextIdx;
+            setHistoryIndex(nextIdx);
+            setCurrentHikma(hikmaHistory[nextIdx]);
+            handleShuffleBackground();
+        } else {
+            handleFullShuffle();
+        }
+    }, [historyIndex, hikmaHistory, handleShuffleBackground, handleFullShuffle]);
+
+    const toggleAutoScroll = useCallback(() => {
+        setIsAutoScrolling(prev => {
+            if (prev) {
+                if (autoScrollIntervalRef.current) {
+                    clearInterval(autoScrollIntervalRef.current);
+                    autoScrollIntervalRef.current = null;
+                }
+                return false;
+            } else {
+                autoScrollIntervalRef.current = setInterval(() => {
+                    autoScrollFnRef.current();
+                }, 5000);
+                return true;
+            }
+        });
+    }, []);
+
     const swipeHandlers = useSwipeable({
         onSwipedUp: () => handleFullShuffle(),
         preventScrollOnSwipe: true,
@@ -274,6 +335,12 @@ export function HomeScreen() {
         delta: 10,
         swipeDuration: 500,
     });
+
+    useEffect(() => { autoScrollFnRef.current = handleFullShuffle; }, [handleFullShuffle]);
+
+    useEffect(() => {
+        return () => { if (autoScrollIntervalRef.current) clearInterval(autoScrollIntervalRef.current); };
+    }, []);
 
     // Initial setup - runs only once
     useEffect(() => {
@@ -286,7 +353,11 @@ export function HomeScreen() {
         const today = new Date();
         const dateSeed = today.getFullYear() * 365 + today.getMonth() * 31 + today.getDate();
         const dailyIndex = dateSeed % ALL_MOCKS.length;
-        setCurrentHikma(ALL_MOCKS[dailyIndex]);
+        const dailyHikma = ALL_MOCKS[dailyIndex];
+        setCurrentHikma(dailyHikma);
+        setHikmaHistory([dailyHikma]);
+        setHistoryIndex(0);
+        historyIndexRef.current = 0;
 
         // Filter images internally to avoid dependency on outer scope variable `cloudinaryImages`
         // which would cause linter warnings or stale closures if we put it in deps
@@ -304,6 +375,8 @@ export function HomeScreen() {
 
         // Pre-fill buffer on mount
         refillBuffer("recherche-ia", "", 2);
+
+        return () => { isMountedRef.current = false; };
     }, []); // Empty dependency array ensures this runs strictly once
 
     // Event listeners configuration
@@ -514,6 +587,19 @@ export function HomeScreen() {
             {/* 2. LEFT SIDE UI: Sidebar design tools (Moved to bottom) */}
             <div className="absolute left-6 bottom-40 z-40 flex flex-col gap-4">
                 <button
+                    onClick={toggleAutoScroll}
+                    className={cn(
+                        "w-12 h-12 rounded-full backdrop-blur-md border shadow-2xl flex items-center justify-center active:scale-90 transition-all font-bold",
+                        isAutoScrolling
+                            ? "bg-emerald-500/30 border-emerald-500/60 text-emerald-400"
+                            : "bg-primary/20 dark:bg-primary/10 border-primary/30 dark:border-primary/20 text-primary-foreground dark:text-primary"
+                    )}
+                    aria-label="Défilement automatique"
+                >
+                    {isAutoScrolling ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+                </button>
+
+                <button
                     onClick={() => setIsGalleryOpen(true)}
                     className="w-12 h-12 rounded-full bg-primary/20 dark:bg-primary/10 backdrop-blur-md border border-primary/30 dark:border-primary/20 text-primary-foreground dark:text-primary shadow-2xl flex items-center justify-center active:scale-90 transition-all font-bold"
                     aria-label="Galerie Cloudinary"
@@ -571,14 +657,23 @@ export function HomeScreen() {
                 </button>
             </div>
 
-            {/* Bottom Tools - Cleaned up to match old demand */}
-            <div className="absolute bottom-10 left-0 right-0 z-40 flex flex-col items-center gap-4 px-4">
+            {/* Bottom Tools */}
+            <div className="absolute bottom-10 left-0 right-0 z-40 flex items-center justify-center gap-3 px-4">
+                <button
+                    onClick={handlePrev}
+                    disabled={historyIndex === 0}
+                    className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 text-white flex items-center justify-center active:scale-90 transition-all disabled:opacity-30"
+                    aria-label="Citation précédente"
+                >
+                    <ChevronLeft className="w-6 h-6" />
+                </button>
+
                 <button
                     onClick={handleGenerateAiContent}
                     disabled={isGenerating || isBuffering}
                     className={cn(
-                        "h-14 px-10 rounded-full bg-emerald-500/10 backdrop-blur-xl text-white flex items-center gap-3 active:scale-95 transition-all w-full max-w-[280px] font-bold border border-white/20",
-                        (isGenerating || isBuffering && buffer.length === 0) && "opacity-80"
+                        "h-14 px-8 rounded-full bg-emerald-500/10 backdrop-blur-xl text-white flex items-center gap-3 active:scale-95 transition-all font-bold border border-white/20",
+                        (isGenerating || (isBuffering && buffer.length === 0)) && "opacity-80"
                     )}
                 >
                     {isGenerating || (isBuffering && buffer.length === 0) ? (
@@ -587,6 +682,14 @@ export function HomeScreen() {
                         <Zap className="w-6 h-6 text-emerald-400 fill-emerald-400" />
                     )}
                     <span className="font-bold tracking-tight text-emerald-500">Agent Hikma</span>
+                </button>
+
+                <button
+                    onClick={handleNext}
+                    className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 text-white flex items-center justify-center active:scale-90 transition-all"
+                    aria-label="Citation suivante"
+                >
+                    <ChevronRight className="w-6 h-6" />
                 </button>
             </div>
 

@@ -65,7 +65,22 @@ async function loadDatabase(): Promise<HadithDatabase> {
 }
 
 // Track recently shown items to avoid repeats
-const recentlyShown = new Set<string>();
+function loadRecentlyShown(): Set<string> {
+  if (typeof window === 'undefined') return new Set();
+  try {
+    const saved = localStorage.getItem('hikma_recently_shown');
+    return saved ? new Set(JSON.parse(saved)) : new Set();
+  } catch { return new Set(); }
+}
+
+function saveRecentlyShown(set: Set<string>) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem('hikma_recently_shown', JSON.stringify([...set]));
+  } catch {}
+}
+
+const recentlyShown = loadRecentlyShown();
 const MAX_RECENT = 10;
 
 function getRandomItem<T extends { content: string }>(array: T[]): T {
@@ -85,6 +100,7 @@ function getRandomItem<T extends { content: string }>(array: T[]): T {
     const first = recentlyShown.values().next().value;
     if (first) recentlyShown.delete(first);
   }
+  saveRecentlyShown(recentlyShown);
 
   return item;
 }
@@ -180,6 +196,37 @@ async function generateFromAI(
   category: string,
   topic?: string
 ): Promise<GenerateHadithOutput> {
+  // Rate limiting côté client : max 30 appels par 60 secondes
+  const RATE_LIMIT_KEY = 'hikma_rate_limit';
+  const RATE_LIMIT_MAX = 30;
+  const RATE_LIMIT_WINDOW_MS = 60 * 1000;
+
+  try {
+    const now = Date.now();
+    const stored = localStorage.getItem(RATE_LIMIT_KEY);
+    let rateData: { timestamp: number; count: number } = { timestamp: now, count: 0 };
+
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (now - parsed.timestamp < RATE_LIMIT_WINDOW_MS) {
+        rateData = parsed;
+      }
+    }
+
+    if (rateData.count >= RATE_LIMIT_MAX) {
+      const secondsLeft = Math.ceil((RATE_LIMIT_WINDOW_MS - (now - rateData.timestamp)) / 1000);
+      throw new Error(`Limite de requêtes atteinte (${RATE_LIMIT_MAX} appels/min). Veuillez patienter ${secondsLeft} seconde(s).`);
+    }
+
+    rateData.count += 1;
+    localStorage.setItem(RATE_LIMIT_KEY, JSON.stringify(rateData));
+  } catch (e) {
+    // Si l'erreur vient du rate limiting, on la propage ; sinon (ex: localStorage indisponible) on continue
+    if (e instanceof Error && e.message.startsWith('Limite de requêtes')) {
+      throw e;
+    }
+  }
+
   const apiKey = GEMINI_API_KEY;
 
   if (!apiKey) {
@@ -314,7 +361,7 @@ ${baseRules}
   const prompt = getPrompt();
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 15000);
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
 
   let response: Response;
   try {
