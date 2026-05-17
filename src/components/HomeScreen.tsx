@@ -8,7 +8,7 @@ import { Filesystem, Directory } from '@capacitor/filesystem';
 import html2canvas from 'html2canvas';
 import { useToast } from "@/hooks/use-toast";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
-import { getFavorites, toggleFavorite, cn, updateStreak } from "@/lib/utils"
+import { getFavorites, toggleFavorite, cn, updateStreak, getCollections, addToCollection, type Collection } from "@/lib/utils"
 import {
     Zap,
     Image as ImageIcon,
@@ -37,7 +37,7 @@ import { CategoryDrawer } from "@/components/CategoryDrawer"
 import { DesignToolsDrawer } from "@/components/DesignToolsDrawer"
 import { MobileTopicInput } from "@/components/studio/MobileTopicInput"
 import OnboardingScreen from '@/components/OnboardingScreen'
-import { generateHadith } from '@/ai/flows/generate-hadith'
+import { generateHadith, generateExplanation } from '@/ai/flows/generate-hadith'
 import { useAuth, useUser } from '@/firebase'
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, sendPasswordResetEmail, sendEmailVerification, GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
 import {
@@ -121,6 +121,11 @@ export function HomeScreen() {
     const [historyIndex, setHistoryIndex] = useState<number>(0);
     const [isAutoScrolling, setIsAutoScrolling] = useState(false);
     const [isSpeaking, setIsSpeaking] = useState(false);
+    const [showExplanation, setShowExplanation] = useState(false);
+    const [explanationText, setExplanationText] = useState('');
+    const [isExplaining, setIsExplaining] = useState(false);
+    const [showCollectionPicker, setShowCollectionPicker] = useState(false);
+    const [userCollections, setUserCollections] = useState<Collection[]>([]);
     const speakRef = useRef<SpeechSynthesisUtterance | null>(null);
     const historyIndexRef = useRef(0);
     const autoScrollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -260,6 +265,29 @@ export function HomeScreen() {
         setIsSpeaking(true);
         window.speechSynthesis.speak(utterance);
     }, [isSpeaking, currentHikma]);
+
+    const handleExplain = useCallback(async () => {
+        if (isExplaining) return;
+        setIsExplaining(true);
+        setShowExplanation(true);
+        setExplanationText('');
+        try {
+            const explanation = await generateExplanation(currentHikma.fr, currentHikma.source);
+            setExplanationText(explanation);
+        } catch {
+            setExplanationText("Impossible de générer une explication pour le moment. Réessayez.");
+        } finally {
+            setIsExplaining(false);
+        }
+    }, [currentHikma, isExplaining]);
+
+    const handleAddToCollection = useCallback((collectionId: string) => {
+        const success = addToCollection(collectionId, { ...currentHikma });
+        setShowCollectionPicker(false);
+        toast({
+            title: success ? 'Ajouté à la collection !' : 'Déjà dans cette collection',
+        });
+    }, [currentHikma, toast]);
 
     const handlePasswordReset = async () => {
         if (!auth || !authEmail) {
@@ -402,6 +430,7 @@ export function HomeScreen() {
             window.speechSynthesis.cancel();
             setIsSpeaking(false);
         }
+        setShowExplanation(false);
     }, [currentHikma]);
 
     // Initial setup - runs only once
@@ -411,6 +440,7 @@ export function HomeScreen() {
         if (!hasSeen) setShowOnboarding(true);
 
         setFavorites(getFavorites().map(f => f.fr));
+        setUserCollections(getCollections());
 
         // Set daily Hikma only once on mount
         const today = new Date();
@@ -689,6 +719,27 @@ export function HomeScreen() {
                 >
                     <RefreshCw className="w-5 h-5" />
                 </button>
+
+                <button
+                    onClick={handleExplain}
+                    className={cn(
+                        "w-12 h-12 rounded-full backdrop-blur-md border shadow-2xl flex items-center justify-center active:scale-90 transition-all font-bold",
+                        showExplanation
+                            ? "bg-amber-500/30 border-amber-500/60 text-amber-400"
+                            : "bg-primary/20 dark:bg-primary/10 border-primary/30 dark:border-primary/20 text-primary-foreground dark:text-primary"
+                    )}
+                    aria-label="Mode Étudiant — Explication"
+                >
+                    <BookOpen className="w-5 h-5" />
+                </button>
+
+                <button
+                    onClick={() => { setUserCollections(getCollections()); setShowCollectionPicker(true); }}
+                    className="w-12 h-12 rounded-full bg-primary/20 dark:bg-primary/10 backdrop-blur-md border border-primary/30 dark:border-primary/20 text-primary-foreground dark:text-primary shadow-2xl flex items-center justify-center active:scale-90 transition-all font-bold"
+                    aria-label="Ajouter à une collection"
+                >
+                    <BookMarked className="w-5 h-5" />
+                </button>
             </div>
 
             {/* 3. RIGHT SIDE UI: Action tools (Moved to bottom) */}
@@ -771,6 +822,93 @@ export function HomeScreen() {
                     <ChevronRight className="w-6 h-6" />
                 </button>
             </div>
+
+            {/* Mode Étudiant — Panneau d'explication */}
+            <AnimatePresence>
+                {showExplanation && (
+                    <motion.div
+                        initial={{ y: '100%', opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: '100%', opacity: 0 }}
+                        transition={{ type: 'spring', stiffness: 300, damping: 35 }}
+                        className="absolute bottom-0 left-0 right-0 z-[70] bg-slate-900/97 backdrop-blur-2xl rounded-t-3xl border-t border-white/10 max-h-[70vh] overflow-hidden flex flex-col"
+                    >
+                        <div className="flex items-center justify-between px-6 pt-5 pb-3 border-b border-white/10">
+                            <div className="flex items-center gap-2">
+                                <BookOpen className="w-5 h-5 text-amber-400" />
+                                <h3 className="text-white font-bold text-base">Mode Étudiant</h3>
+                                <span className="text-[10px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full font-bold">IA</span>
+                            </div>
+                            <button
+                                onClick={() => setShowExplanation(false)}
+                                className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/20 transition-all"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto px-6 py-4">
+                            {isExplaining ? (
+                                <div className="flex flex-col items-center justify-center py-10 gap-3">
+                                    <Loader2 className="w-8 h-8 animate-spin text-amber-400" />
+                                    <p className="text-white/60 text-sm">L'Agent analyse ce texte sacré...</p>
+                                </div>
+                            ) : (
+                                <div className="text-white/90 text-sm leading-relaxed whitespace-pre-wrap font-light">
+                                    {explanationText}
+                                </div>
+                            )}
+                        </div>
+                        <div className="px-6 py-4 border-t border-white/10">
+                            <p className="text-[10px] text-white/30 text-center">— Analyse générée par l'Agent Hikma (IA) —</p>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Collection Picker */}
+            <AnimatePresence>
+                {showCollectionPicker && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="absolute inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-end"
+                        onClick={() => setShowCollectionPicker(false)}
+                    >
+                        <motion.div
+                            initial={{ y: '100%' }}
+                            animate={{ y: 0 }}
+                            exit={{ y: '100%' }}
+                            transition={{ type: 'spring', stiffness: 300, damping: 35 }}
+                            className="w-full bg-slate-900 rounded-t-3xl p-6 space-y-4"
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-white font-bold text-base">Ajouter à une collection</h3>
+                                <button onClick={() => setShowCollectionPicker(false)} className="text-white/50 hover:text-white">
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+                            {userCollections.length === 0 ? (
+                                <p className="text-white/50 text-sm text-center py-4">Aucune collection. Créez-en une dans l'onglet Collections.</p>
+                            ) : (
+                                <div className="space-y-2 max-h-64 overflow-y-auto">
+                                    {userCollections.map(col => (
+                                        <button key={col.id} onClick={() => handleAddToCollection(col.id)}
+                                            className="w-full flex items-center gap-3 p-3 rounded-2xl bg-white/10 hover:bg-white/20 transition-all text-left">
+                                            <span className="text-xl">{col.emoji}</span>
+                                            <div>
+                                                <p className="text-white font-medium text-sm">{col.name}</p>
+                                                <p className="text-white/50 text-xs">{col.items.length} hikma(s)</p>
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Drawers & Popups */}
             <CloudinaryGallery

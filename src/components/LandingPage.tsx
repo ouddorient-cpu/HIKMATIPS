@@ -3,52 +3,41 @@
 import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
-    Type,
-    Maximize,
     Share2,
-    Settings,
-    ChevronUp,
     Download,
     BookOpen,
     Rocket,
     MessageCircle,
-    Image as ImageIcon,
     BookMarked,
     Sparkles,
     Users,
-    Smartphone,
-    Instagram,
-    ArrowDown,
-    CheckCircle2,
     Moon,
     Mail,
     MessageSquare,
     Star,
-    HelpCircle,
-    Search,
+    CheckCircle2,
     Library,
     GraduationCap,
     Play,
-    Maximize as MaximizeIcon,
+    Maximize,
     Volume2,
+    ArrowRight,
+    Zap,
 } from 'lucide-react';
 import { searchHadiths, DetailedHadith } from '@/lib/hadith-search';
 import { generateExplanation } from '@/ai/flows/generate-hadith';
-import { Hadiths } from '@/lib/hadiths';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { initializeFirebase } from '@/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { ThemeToggle } from '@/components/ThemeToggle';
 import dynamic from 'next/dynamic';
 import { HeroModern } from '@/components/HeroModern';
+import { cn } from '@/lib/utils';
 
 const GeneratorPage = dynamic(() => import('@/components/GeneratorPage'), {
   ssr: false,
@@ -60,67 +49,68 @@ const GeneratorPage = dynamic(() => import('@/components/GeneratorPage'), {
   ),
 });
 
+/* ─── Floating animation keyframes injected once ─── */
+const floatStyles = `
+  @keyframes float1 { 0%,100%{transform:translateY(0) scale(1)} 50%{transform:translateY(-12px) scale(1.02)} }
+  @keyframes float2 { 0%,100%{transform:translateY(0) scale(1)} 50%{transform:translateY(-8px) scale(1.015)} }
+  @keyframes float3 { 0%,100%{transform:translateY(0) scale(1)} 50%{transform:translateY(-14px) scale(1.02)} }
+  .float-1{animation:float1 6s cubic-bezier(.175,.885,.32,1.275) infinite}
+  .float-2{animation:float2 8s cubic-bezier(.175,.885,.32,1.275) infinite 1s}
+  .float-3{animation:float3 7s cubic-bezier(.175,.885,.32,1.275) infinite 2s}
+  .glass{background:rgba(255,255,255,0.75);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(16,185,129,0.12);box-shadow:0 4px 32px rgba(16,185,129,0.06),0 1px 0 rgba(255,255,255,0.9) inset;}
+  .glass:hover{border-color:rgba(16,185,129,0.3);box-shadow:0 8px 40px rgba(16,185,129,0.1);}
+`;
+
+/* ─── Book card data ─── */
+const BOOKS = [
+  { title: 'Sahih Al-Bukhari', label: 'Authentique', count: '7 563 textes', color: '#F0C040', delay: 'float-1' },
+  { title: 'Sahih Muslim',     label: 'Authentique', count: '3 033 textes', color: '#10B981', delay: 'float-2' },
+  { title: 'Al-Muwatta',       label: 'Héritage',    count: 'Imam Malik',   color: '#a78bfa', delay: 'float-3' },
+];
+
+/* ─── Features bento data ─── */
+const FEATURES = [
+  { icon: BookMarked, label: 'Versets Coraniques', desc: 'Recherche par sourate ou mot-clé avec traduction certifiée et typographie Othmani.', large: true, glow: '#10B981' },
+  { icon: BookOpen,   label: '9 Recueils Majeurs', desc: 'Hadiths classifiés par degré d\'authenticité.',                                     large: false, glow: '#F0C040' },
+  { icon: Moon,       label: 'Rappels & Citations', desc: 'Bibliothèque de paroles de savants prête à partager.',                              large: false, glow: '#818cf8' },
+  { icon: Download,   label: 'Export Ultra HD',     desc: 'Formats verticaux (Reels, Shorts) et horizontaux (YouTube) optimisés.',             large: true,  glow: '#10B981' },
+];
+
+/* ─── Audience tiles ─── */
+const AUDIENCE = [
+  { icon: '🎙️', title: 'Prédicateurs & Imams',     desc: 'Diffusez vos khutbahs en formats courts percutants.', accent: '#F0C040', offset: false },
+  { icon: '🕌', title: 'Associations & Mosquées', desc: 'Animez vos réseaux avec du contenu de haute qualité.', accent: '#10B981', offset: true  },
+  { icon: '👤', title: 'Créateurs Indépendants',  desc: 'Industrialisez votre production de contenu islamique.', accent: '#e5e7eb', offset: false },
+  { icon: '🎓', title: 'Instituts & Enseignants', desc: 'Créez des supports visuels éducatifs impactants.',      accent: '#F0C040', offset: true  },
+];
+
+/* ─── Why checklist ─── */
+const WHY = [
+  'Contenu islamique authentique et vérifié',
+  'Interface simple et intuitive',
+  'Génération par l\'Agent Hikma IA',
+  'Export haute qualité tous réseaux',
+  'Gratuit avec compte premium',
+  '100% respectueux des valeurs islamiques',
+];
+
 export default function LandingPage() {
   const [showGenerator, setShowGenerator] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
-
-  // Chatbot states
-  const [chatQuery, setChatQuery] = useState('');
-  const [chatResults, setChatResults] = useState<DetailedHadith[]>([]);
-  const [isSearchingChat, setIsSearchingChat] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
-
-  // Student Explanation Mode
-  const [explanation, setExplanation] = useState<{ id: number, text: string } | null>(null);
-  const [isExplaining, setIsExplaining] = useState<number | null>(null);
-
-  // Video player state
-  const videoRef = useRef<HTMLVideoElement>(null);
   const [isMuted, setIsMuted] = useState(true);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
-  const handleChatSearch = async (e?: React.FormEvent) => {
-    e?.preventDefault();
-    if (chatQuery.length < 3) return;
-
-    setIsSearchingChat(true);
-    try {
-      const results = await searchHadiths(chatQuery);
-      setChatResults(results);
-      setHasSearched(true);
-    } catch (error) {
-      console.error("Chat search error:", error);
-    } finally {
-      setIsSearchingChat(false);
-    }
-  };
-
-  const handleExplain = async (hadith: DetailedHadith, index: number) => {
-    if (explanation?.id === index) {
-      setExplanation(null);
-      return;
-    }
-
-    setIsExplaining(index);
-    try {
-      const text = await generateExplanation(hadith.french, hadith.source);
-      setExplanation({ id: index, text });
-    } catch (e) {
-      console.error(e);
-      toast({
-        title: "Erreur",
-        description: "L'explication n'a pas pu être générée.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsExplaining(null);
+  const toggleFullscreen = () => {
+    if (videoRef.current) {
+      if (document.fullscreenElement) document.exitFullscreen();
+      else videoRef.current.requestFullscreen?.();
     }
   };
 
   const handleContactSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
-
     const formData = new FormData(e.currentTarget);
     const data = {
       email: formData.get('email') as string,
@@ -128,24 +118,13 @@ export default function LandingPage() {
       message: formData.get('message') as string,
       createdAt: serverTimestamp(),
     };
-
     try {
       const { firestore } = initializeFirebase();
       await addDoc(collection(firestore, 'contacts'), data);
-
-      toast({
-        title: "Message envoyé !",
-        description: "Merci pour votre retour, nous vous répondrons dès que possible.",
-      });
-
+      toast({ title: 'Message envoyé !', description: 'Merci, nous vous répondrons dès que possible.' });
       (e.target as HTMLFormElement).reset();
-    } catch (error) {
-      console.error('Error submitting contact form:', error);
-      toast({
-        title: "Erreur",
-        description: "Une erreur est survenue lors de l'envoi. Veuillez réessayer.",
-        variant: "destructive",
-      });
+    } catch {
+      toast({ title: 'Erreur', description: "Veuillez réessayer.", variant: 'destructive' });
     } finally {
       setIsSubmitting(false);
     }
@@ -153,503 +132,546 @@ export default function LandingPage() {
 
   const scrollToApp = () => {
     setShowGenerator(true);
-    setTimeout(() => {
-      document.getElementById('app-section')?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
+    setTimeout(() => document.getElementById('app-section')?.scrollIntoView({ behavior: 'smooth' }), 100);
   };
 
   return (
-    <div className="w-full min-h-screen">
+    <div className="w-full min-h-screen bg-emerald-50/40 dark:bg-slate-950 text-zinc-900 dark:text-slate-100">
+      <style>{floatStyles}</style>
+
+      {/* Ambient lighting orbs */}
+      <div className="fixed top-1/4 -right-64 w-[600px] h-[600px] rounded-full pointer-events-none z-0" style={{ background: 'radial-gradient(circle,rgba(16,185,129,0.08) 0%,transparent 70%)', filter: 'blur(80px)' }} />
+      <div className="fixed bottom-0 -left-64 w-[500px] h-[500px] rounded-full pointer-events-none z-0" style={{ background: 'radial-gradient(circle,rgba(240,192,64,0.06) 0%,transparent 70%)', filter: 'blur(80px)' }} />
+
+      {/* ── HERO (unchanged) ── */}
       <HeroModern onScrollToApp={scrollToApp} />
 
-      {/* Resources for Students of Knowledge Section - SPIRITUAL TONE */}
-      <section className="py-24 px-4 bg-background border-t border-b overflow-hidden relative">
-        <div className="absolute top-0 right-0 p-12 opacity-[0.03] pointer-events-none">
-          <Library className="h-96 w-96 -rotate-12" />
-        </div>
+      {/* ══════════════════════════════════════════════
+          SECTION 1 — LIBRARY
+      ══════════════════════════════════════════════ */}
+      <section className="relative z-10 py-32 px-4 overflow-hidden">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center min-h-[70vh]">
 
-        <div className="container mx-auto max-w-6xl relative z-10">
-          <div className="flex flex-col lg:flex-row gap-16 items-center">
-            <div className="lg:w-1/2 space-y-8">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-widest">
-                <GraduationCap className="h-4 w-4" />
-                Talabul 'Ilm — Quête de Science
+            {/* Left text */}
+            <motion.div
+              className="lg:col-span-5 space-y-8"
+              initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8 }}
+            >
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm font-medium" style={{ borderColor: 'rgba(16,185,129,0.3)', background: 'rgba(16,185,129,0.08)', color: '#059669' }}>
+                <Library className="h-4 w-4" />
+                Sources Authentiques
               </div>
-              <h2 className="text-4xl sm:text-5xl font-bold font-display leading-tight text-foreground">
-                Une Bibliothèque pour les <span className="text-hikma-gradient font-extrabold">Cheminants</span>
+
+              <h2 className="text-4xl md:text-6xl font-bold tracking-tighter leading-[1.1]">
+                <span className="text-zinc-500 dark:text-slate-400">Héritage vérifié.</span><br />
+                <span className="text-zinc-900 dark:text-white">Création sereine.</span>
               </h2>
-              <div className="space-y-4 text-muted-foreground text-lg leading-relaxed">
-                <p>
-                  Le Prophète <span className="text-foreground font-semibold italic">(ﷺ)</span> a dit : <span className="italic">"Celui qui emprunte un chemin par lequel il recherche une science, Allah lui facilite un chemin vers le Paradis."</span>
-                </p>
-                <p>
-                  HikmaClips n'est pas qu'un outil de diffusion, c'est un <span className="font-bold text-foreground">compagnon d'étude</span>. Notre base de données regroupe l'intégralité des 6 grands Sahihs et Sunans, ainsi que le Muwatta.
-                </p>
-                <p>
-                  Que vous soyez un <span className="text-primary font-medium">étudiant débutant</span> cherchant à confirmer un verset, ou plus <span className="text-primary font-medium">confirmé</span> ayant besoin de références précises pour vos cours, cet espace est le vôtre.
-                </p>
-              </div>
 
-              <div className="grid sm:grid-cols-2 gap-4 pt-4">
-                <div className="p-5 rounded-2xl border border-primary/20 bg-primary/5 space-y-3 transition-colors hover:bg-primary/10">
-                  <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary">
-                    <Library className="h-5 w-5" />
-                  </div>
-                  <h4 className="font-bold text-foreground">9 Livres Majeurs</h4>
-                  <p className="text-sm opacity-80">Sihah et Sunan accessibles intégralement en français.</p>
+              <p className="text-zinc-600 dark:text-slate-400 text-lg sm:text-xl leading-relaxed max-w-lg">
+                Ne perdez plus des heures à vérifier vos sources. Accédez instantanément aux 9 recueils majeurs, authentifiés et prêts pour vos montages.
+              </p>
+
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="glass dark:bg-slate-800/80 dark:border-slate-700 p-5 rounded-2xl space-y-2">
+                  <GraduationCap className="h-5 w-5 text-primary" />
+                  <h4 className="font-bold text-zinc-900 dark:text-white text-sm">9 Livres Majeurs</h4>
+                  <p className="text-zinc-500 dark:text-slate-400 text-xs">Sihah et Sunan intégralement accessibles en français.</p>
                 </div>
-                <div className="p-5 rounded-2xl border border-accent/20 bg-accent/5 space-y-3 transition-colors hover:bg-accent/10">
-                  <div className="w-10 h-10 rounded-xl bg-accent/20 flex items-center justify-center text-accent">
-                    <CheckCircle2 className="h-5 w-5" />
-                  </div>
-                  <h4 className="font-bold text-foreground">Vérification des Sources</h4>
-                  <p className="text-sm opacity-80">Garantissez l'authenticité de chaque parole partagée.</p>
+                <div className="glass dark:bg-slate-800/80 dark:border-slate-700 p-5 rounded-2xl space-y-2">
+                  <CheckCircle2 className="h-5 w-5 text-primary" />
+                  <h4 className="font-bold text-zinc-900 dark:text-white text-sm">Sources Vérifiées</h4>
+                  <p className="text-zinc-500 dark:text-slate-400 text-xs">Garantissez l'authenticité de chaque parole partagée.</p>
                 </div>
               </div>
 
               <Link href="/ressources">
-                <Button size="lg" className="w-full sm:w-auto h-16 px-10 mt-6 bg-hikma-gradient hover:scale-[1.02] active:scale-95 transition-all gap-3 text-lg font-bold shadow-hikma shadow-primary/20">
-                  Explorer la Bibliothèque
-                  <ArrowDown className="h-5 w-5 -rotate-90" />
-                </Button>
+                <button className="group relative px-7 py-4 rounded-xl font-semibold text-white overflow-hidden transition-transform active:scale-95">
+                  <div className="absolute inset-0 bg-primary transition-transform duration-300 group-hover:scale-105 rounded-xl" />
+                  <span className="relative flex items-center gap-2">
+                    Explorer la Bibliothèque
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </span>
+                </button>
               </Link>
-            </div>
+            </motion.div>
 
-            <div className="lg:w-1/2 grid grid-cols-2 gap-4 relative">
-              <div className="absolute inset-0 bg-primary/5 blur-[120px] rounded-full" />
-              {/* Decorative Book Cards */}
-              <div className="space-y-4 pt-12">
-                <div className="p-8 rounded-[2rem] bg-background shadow-2xl border border-border/50 transition-all hover:-translate-y-2 hover:border-primary/30">
-                  <div className="h-2 w-12 bg-primary/20 rounded-full mb-4" />
-                  <span className="text-[10px] font-bold text-primary uppercase tracking-[0.2em]">Authentique</span>
-                  <h3 className="text-2xl font-black mt-2">Al-Bukhari</h3>
-                  <p className="text-xs text-muted-foreground mt-3 italic leading-relaxed">"Le plus haut degré d'authenticité après le Coran."</p>
-                </div>
-                <div className="p-8 rounded-[2rem] bg-background shadow-2xl border border-border/50 transition-all hover:-translate-y-2 hover:border-emerald-500/30">
-                  <div className="h-2 w-12 bg-emerald-500/20 rounded-full mb-4" />
-                  <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-[0.2em]">Sunan</span>
-                  <h3 className="text-2xl font-black mt-2">Abu Dawud</h3>
-                  <p className="text-xs text-muted-foreground mt-3 italic leading-relaxed">"La quintessence des règles et de la jurisprudence."</p>
-                </div>
-              </div>
-              <div className="space-y-4">
-                <div className="p-8 rounded-[2rem] bg-background shadow-2xl border border-border/50 transition-all hover:-translate-y-2 hover:border-primary/30">
-                  <div className="h-2 w-12 bg-primary/20 rounded-full mb-4" />
-                  <span className="text-[10px] font-bold text-primary uppercase tracking-[0.2em]">Authentique</span>
-                  <h3 className="text-2xl font-black mt-2">Muslim</h3>
-                  <p className="text-xs text-muted-foreground mt-3 italic leading-relaxed">"Une organisation et une précision sans égal."</p>
-                </div>
-                <div className="p-8 rounded-[2rem] bg-background shadow-2xl border border-border/50 transition-all hover:-translate-y-2 hover:border-amber-600/30">
-                  <div className="h-2 w-12 bg-amber-600/20 rounded-full mb-4" />
-                  <span className="text-[10px] font-bold text-amber-600 uppercase tracking-[0.2em]">Héritage</span>
-                  <h3 className="text-2xl font-black mt-2">Muwatta</h3>
-                  <p className="text-xs text-muted-foreground mt-3 italic leading-relaxed">"La sagesse de l'Imam de la cité prophétique."</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+            {/* Right: floating book cards */}
+            <div className="lg:col-span-7 relative h-[480px] md:h-[580px] w-full flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full opacity-30" style={{ background: 'radial-gradient(circle,rgba(16,185,129,0.15) 0%,transparent 70%)' }} />
 
-      {/* Features Section */}
-      <section className="py-20 px-4 bg-muted/30">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-              Tout ce qu'il vous faut pour{' '}
-              <span className="text-hikma-gradient">inspirer</span>
-            </h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              HikmaClips simplifie la diffusion de la Da'wah islamique de manière simple et rapide
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              {
-                icon: BookMarked,
-                title: 'Versets Coraniques',
-                description: 'Accédez à des versets authentiques avec traduction française',
-              },
-              {
-                icon: BookOpen,
-                title: 'Hadiths Vérifiés',
-                description: 'Hadiths issus des recueils authentiques (Bukhari, Muslim...)',
-              },
-              {
-                icon: Moon,
-                title: 'Rappels Bénéfiques',
-                description: 'Le rappel profite aux croyants - sagesse islamique',
-              },
-              {
-                icon: Download,
-                title: 'Export HD',
-                description: 'Images haute qualité optimisées pour les réseaux sociaux',
-              },
-            ].map((feature, index) => (
+              {/* Bukhari */}
               <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
+                className="absolute w-[260px] md:w-[320px] float-1 z-10"
+                style={{ top: '5%', right: '5%' }}
+                initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }}
               >
-                <Card className="h-full hover:shadow-lg transition-shadow border-primary/10">
-                  <CardContent className="p-6 text-center">
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                      <feature.icon className="h-6 w-6 text-primary" />
+                <div className="glass dark:bg-slate-800/80 dark:border-slate-700 p-6 rounded-[2rem]">
+                  <div className="flex justify-between items-start mb-5">
+                    <div className="w-11 h-11 rounded-full bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 flex items-center justify-center">
+                      <BookOpen className="h-5 w-5" style={{ color: '#F0C040' }} />
                     </div>
-                    <h3 className="font-semibold mb-2">{feature.title}</h3>
-                    <p className="text-sm text-muted-foreground">{feature.description}</p>
-                  </CardContent>
-                </Card>
+                    <span className="text-[10px] font-mono text-zinc-400 dark:text-slate-500 uppercase tracking-widest">7 563 textes</span>
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#d97706' }}>Authentique</span>
+                  <h3 className="text-xl font-black text-zinc-900 dark:text-white mt-1">Sahih Al-Bukhari</h3>
+                  <p className="text-xs text-zinc-500 dark:text-slate-400 mt-2 italic leading-relaxed">"Le plus haut degré d'authenticité après le Coran."</p>
+                </div>
               </motion.div>
-            ))}
+
+              {/* Muslim */}
+              <motion.div
+                className="absolute w-[240px] md:w-[300px] float-2 z-20"
+                style={{ top: '35%', left: '2%' }}
+                initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }}
+              >
+                <div className="glass dark:bg-slate-800/80 dark:border-slate-700 p-6 rounded-[2rem]">
+                  <div className="w-11 h-11 rounded-full bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-700 flex items-center justify-center mb-5">
+                    <BookMarked className="h-5 w-5 text-primary" />
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-primary">Authentique</span>
+                  <h3 className="text-xl font-black text-zinc-900 dark:text-white mt-1">Sahih Muslim</h3>
+                  <p className="text-xs text-zinc-500 dark:text-slate-400 mt-2 italic">"Une organisation et une précision sans égal."</p>
+                </div>
+              </motion.div>
+
+              {/* Muwatta */}
+              <motion.div
+                className="absolute w-[200px] md:w-[250px] float-3 z-30"
+                style={{ bottom: '8%', right: '12%' }}
+                initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.3 }}
+              >
+                <div className="glass dark:bg-slate-800/80 dark:border-slate-700 p-5 rounded-3xl">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-amber-600">Héritage</span>
+                  <h3 className="text-lg font-black text-zinc-900 dark:text-white mt-1">Al-Muwatta</h3>
+                  <p className="text-xs text-zinc-500 dark:text-slate-400 mt-1">Imam Malik · Cité Prophétique</p>
+                </div>
+              </motion.div>
+
+              {/* Abu Dawud */}
+              <motion.div
+                className="absolute w-[180px] md:w-[220px] float-1 z-20"
+                style={{ top: '12%', left: '18%' }}
+                initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.25 }}
+              >
+                <div className="glass dark:bg-slate-800/80 dark:border-slate-700 p-5 rounded-3xl">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-primary">Sunan</span>
+                  <h3 className="text-lg font-black text-zinc-900 dark:text-white mt-1">Abu Dawud</h3>
+                  <p className="text-xs text-zinc-500 dark:text-slate-400 mt-1">"Quintessence de la jurisprudence."</p>
+                </div>
+              </motion.div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Who is it for Section */}
-      <section className="py-20 px-4">
-        <div className="container mx-auto max-w-4xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-              Pour qui est{' '}
-              <span className="text-hikma-gradient">HikmaClips</span> ?
-            </h2>
-          </div>
+      {/* ══════════════════════════════════════════════
+          SECTION 2 — FEATURES BENTO
+      ══════════════════════════════════════════════ */}
+      <section className="relative z-10 py-24 px-4">
+        <div className="max-w-7xl mx-auto">
+          <motion.div
+            className="mb-16 flex flex-col md:flex-row justify-between items-end gap-6"
+            initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+          >
+            <div>
+              <p className="text-primary text-sm font-bold uppercase tracking-widest mb-3">Fonctionnalités</p>
+              <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-zinc-900 dark:text-white">L'Arsenal du Créateur</h2>
+            </div>
+            <p className="text-zinc-500 dark:text-slate-400 text-lg max-w-sm">Tout ce dont vous avez besoin pour produire du contenu percutant.</p>
+          </motion.div>
 
-          <div className="grid sm:grid-cols-2 gap-6">
-            {[
-              {
-                icon: Users,
-                title: 'Prédicateurs',
-                description: 'Un outil simple pour diffuser vos rappels au plus grand nombre',
-              },
-              {
-                icon: Users,
-                title: 'Associations & Mosquées',
-                description: 'Communication visuelle pour vos événements et rappels',
-              },
-              {
-                icon: Share2,
-                title: 'Particuliers',
-                description: 'Partagez la sagesse islamique avec vos proches',
-              },
-              {
-                icon: Sparkles,
-                title: 'Enseignants',
-                description: 'Supports visuels pour vos cours et conférences',
-              },
-            ].map((item, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, x: index % 2 === 0 ? -20 : 20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                className="flex items-start gap-4 p-6 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
-              >
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                  <item.icon className="h-5 w-5 text-primary" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {/* Large card — Versets */}
+            <motion.div
+              className="md:col-span-2 glass dark:bg-slate-800/80 dark:border-slate-700 rounded-[2.5rem] p-8 md:p-12 relative overflow-hidden group cursor-default"
+              initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.05 }}
+            >
+              <div className="absolute top-0 right-0 w-72 h-72 rounded-full -translate-y-1/2 translate-x-1/2 transition-transform duration-700 group-hover:scale-150" style={{ background: 'rgba(16,185,129,0.08)', filter: 'blur(60px)' }} />
+              <div className="relative z-10 flex flex-col h-full justify-between min-h-[200px]">
+                <div className="w-16 h-16 rounded-2xl bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-700 flex items-center justify-center mb-12">
+                  <BookMarked className="h-7 w-7 text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-semibold mb-1">{item.title}</h3>
-                  <p className="text-sm text-muted-foreground">{item.description}</p>
+                  <h3 className="text-2xl md:text-3xl font-bold text-zinc-900 dark:text-white mb-3">Versets Coraniques Multilingues</h3>
+                  <p className="text-zinc-500 dark:text-slate-400 text-lg max-w-md">Recherche par sourate ou mot clé. Insertion avec traduction française certifiée et typographie Othmani.</p>
                 </div>
-              </motion.div>
-            ))}
+              </div>
+            </motion.div>
+
+            {/* Small card — Hadiths */}
+            <motion.div
+              className="glass dark:bg-slate-800/80 dark:border-slate-700 rounded-[2.5rem] p-8 relative overflow-hidden group cursor-default"
+              initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }}
+            >
+              <div className="absolute bottom-0 right-0 w-40 h-40 rounded-full translate-y-1/2 translate-x-1/2" style={{ background: 'rgba(240,192,64,0.08)', filter: 'blur(40px)' }} />
+              <div className="w-14 h-14 rounded-2xl bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 flex items-center justify-center mb-8">
+                <BookOpen className="h-6 w-6 text-amber-600" />
+              </div>
+              <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">9 Recueils de Hadiths</h3>
+              <p className="text-zinc-500 dark:text-slate-400 text-sm">Classification par degré d'authenticité. Extraction en un clic.</p>
+            </motion.div>
+
+            {/* Small card — Rappels */}
+            <motion.div
+              className="glass dark:bg-slate-800/80 dark:border-slate-700 rounded-[2.5rem] p-8 relative overflow-hidden cursor-default"
+              initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.15 }}
+            >
+              <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-700 flex items-center justify-center mb-8">
+                <Moon className="h-6 w-6 text-indigo-500" />
+              </div>
+              <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">Rappels & Citations</h3>
+              <p className="text-zinc-500 dark:text-slate-400 text-sm">Paroles de savants, prêtes à être transformées en citations virales.</p>
+            </motion.div>
+
+            {/* Large card — Export */}
+            <motion.div
+              className="md:col-span-2 glass dark:bg-slate-800/80 dark:border-slate-700 rounded-[2.5rem] p-8 flex flex-col sm:flex-row items-center gap-8 cursor-default"
+              initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }}
+            >
+              <div className="flex-shrink-0 w-20 h-20 rounded-full bg-emerald-50 dark:bg-emerald-900/30 border-2 border-emerald-200 dark:border-emerald-700 flex items-center justify-center" style={{ boxShadow: '0 0 30px rgba(16,185,129,0.15)' }}>
+                <Download className="h-9 w-9 text-primary" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">Export Ultra HD</h3>
+                <p className="text-zinc-500 dark:text-slate-400">Formats verticaux (TikTok, Reels, Shorts) et horizontaux (YouTube) optimisés pour chaque plateforme.</p>
+              </div>
+            </motion.div>
           </div>
         </div>
       </section>
 
-      {/* Why HikmaClips Section */}
-      <section className="py-20 px-4 bg-gradient-to-b from-primary/5 to-accent/5">
-        <div className="container mx-auto max-w-4xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-              Pourquoi choisir HikmaClips ?
-            </h2>
-          </div>
+      {/* ══════════════════════════════════════════════
+          SECTION 3 — WHO + WHY (sticky split)
+      ══════════════════════════════════════════════ */}
+      <section className="relative z-10 py-24 px-4">
+        <div className="max-w-7xl mx-auto border-t border-zinc-800/60 pt-16">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
 
-          <div className="space-y-4">
-            {[
-              'Contenu islamique authentique et vérifié',
-              'Interface simple et intuitive',
-              'Génération par l\'Agent Hikma pour des thèmes personnalisés',
-              'Export haute qualité pour tous les réseaux',
-              'Gratuit avec possibilité de compte premium',
-              '100% développé avec respect des valeurs islamiques',
-            ].map((item, index) => (
+            {/* Sticky left */}
+            <motion.div
+              className="lg:col-span-4 lg:sticky lg:top-32 h-fit space-y-6"
+              initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
+            >
+              <h2 className="text-3xl md:text-5xl font-bold text-zinc-900 dark:text-white leading-tight">
+                Conçu pour<br />les porteurs<br />
+                <span className="text-primary">de message.</span>
+              </h2>
+              <p className="text-zinc-500 dark:text-slate-400">Une architecture pensée pour la Dawa numérique francophone.</p>
+            </motion.div>
+
+            {/* Right: tiles + checklist */}
+            <div className="lg:col-span-8 flex flex-col gap-12">
+
+              {/* Audience tiles */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {AUDIENCE.map((a, i) => (
+                  <motion.div
+                    key={i}
+                    className={cn(
+                      "bg-white/80 dark:bg-slate-800 border-x border-b border-emerald-100 dark:border-slate-700 p-6 rounded-2xl hover:-translate-y-1 transition-transform cursor-default border-t-2 shadow-sm",
+                      a.offset && 'sm:translate-y-4'
+                    )}
+                    style={{ borderTopColor: a.accent }}
+                    initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08 }}
+                  >
+                    <span className="text-2xl mb-4 block">{a.icon}</span>
+                    <h4 className="text-lg font-bold text-zinc-900 dark:text-white mb-1">{a.title}</h4>
+                    <p className="text-zinc-500 dark:text-slate-400 text-sm">{a.desc}</p>
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* Why checklist */}
               <motion.div
-                key={index}
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.05 }}
-                className="flex items-center gap-3 p-4 bg-background rounded-lg shadow-sm"
+                className="bg-gradient-to-br from-emerald-50 to-white dark:from-slate-800 dark:to-slate-900 border border-emerald-100 dark:border-slate-700 rounded-3xl p-8 md:p-12 relative overflow-hidden shadow-sm"
+                initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
               >
-                <CheckCircle2 className="h-5 w-5 text-primary shrink-0" />
-                <span>{item}</span>
+                <div className="absolute -top-24 -right-24 w-64 h-64 rounded-full" style={{ background: 'rgba(16,185,129,0.05)', filter: 'blur(50px)' }} />
+                <h3 className="text-2xl font-bold text-zinc-900 dark:text-white mb-8 border-b border-emerald-100 dark:border-slate-700 pb-4">Pourquoi HikmaClips ?</h3>
+                <ul className="grid grid-cols-1 md:grid-cols-2 gap-y-5 gap-x-8">
+                  {WHY.map((item, i) => (
+                    <li key={i} className="flex items-start gap-3">
+                      <div className="mt-0.5 w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <CheckCircle2 className="h-3 w-3 text-primary" />
+                      </div>
+                      <span className="text-zinc-700 dark:text-slate-300 font-medium text-sm">{item}</span>
+                    </li>
+                  ))}
+                </ul>
               </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Community & Feedback Links */}
-      <section className="py-20 px-4 bg-muted/30">
-        <div className="container mx-auto max-w-4xl">
-          <div className="grid md:grid-cols-2 gap-8 text-center">
-            <div className="p-8 bg-background rounded-3xl border border-primary/10 hover:border-primary/30 transition-all group">
-              <Rocket className="h-10 w-10 text-primary mx-auto mb-4 group-hover:scale-110 transition-transform" />
-              <h3 className="text-xl font-bold mb-2">Quoi de neuf ?</h3>
-              <p className="text-muted-foreground mb-6">Découvrez nos dernières mises à jour et les futures fonctionnalités prévues.</p>
-              <Link href="/updates">
-                <Button variant="outline" className="rounded-xl">Voir les nouveautés</Button>
-              </Link>
-            </div>
-            <div className="p-8 bg-background rounded-3xl border border-accent/10 hover:border-accent/30 transition-all group">
-              <MessageCircle className="h-10 w-10 text-accent mx-auto mb-4 group-hover:scale-110 transition-transform" />
-              <h3 className="text-xl font-bold mb-2">Votre avis</h3>
-              <p className="text-muted-foreground mb-6">Aidez-nous à faire de HikmaClips un meilleur outil pour la communauté.</p>
-              <Link href="/feedback">
-                <Button variant="outline" className="rounded-xl border-accent/50 text-accent hover:bg-accent/5">Donner mon avis</Button>
-              </Link>
             </div>
           </div>
         </div>
       </section>
 
+      {/* ══════════════════════════════════════════════
+          SECTION 4 — COMMUNITY LINKS
+      ══════════════════════════════════════════════ */}
+      <section className="relative z-10 py-20 px-4">
+        <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-6">
+          <motion.div
+            className="glass dark:bg-slate-800/80 dark:border-slate-700 rounded-3xl p-8 text-center group hover:-translate-y-1 transition-transform"
+            initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+          >
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-5">
+              <Rocket className="h-7 w-7 text-primary group-hover:scale-110 transition-transform" />
+            </div>
+            <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">Quoi de neuf ?</h3>
+            <p className="text-zinc-500 dark:text-slate-400 mb-6 text-sm">Découvrez nos dernières mises à jour et futures fonctionnalités.</p>
+            <Link href="/updates">
+              <button className="px-5 py-2.5 rounded-xl border border-zinc-700 text-zinc-300 hover:border-primary hover:text-primary transition-colors text-sm font-medium">
+                Voir les nouveautés
+              </button>
+            </Link>
+          </motion.div>
 
-      {/* App Section - Embedded Generator */}
-      <section id="app-section" className="py-20 px-4 bg-muted/30 scroll-mt-16">
-        <div className="container mx-auto">
+          <motion.div
+            className="glass dark:bg-slate-800/80 dark:border-slate-700 rounded-3xl p-8 text-center group hover:-translate-y-1 transition-transform"
+            initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }}
+          >
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-5" style={{ background: 'rgba(240,192,64,0.1)' }}>
+              <MessageCircle className="h-7 w-7 group-hover:scale-110 transition-transform" style={{ color: '#F0C040' }} />
+            </div>
+            <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">Votre avis</h3>
+            <p className="text-zinc-500 dark:text-slate-400 mb-6 text-sm">Aidez-nous à faire de HikmaClips un meilleur outil pour la communauté.</p>
+            <Link href="/feedback">
+              <button className="px-5 py-2.5 rounded-xl border text-sm font-medium transition-colors" style={{ borderColor: 'rgba(240,192,64,0.4)', color: '#F0C040' }}>
+                Donner mon avis
+              </button>
+            </Link>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════
+          SECTION 5 — GENERATOR CTA
+      ══════════════════════════════════════════════ */}
+      <section id="app-section" className="relative z-10 py-24 px-4 scroll-mt-16 flex flex-col items-center text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+          className="w-full max-w-3xl"
+        >
+          <p className="text-sm font-bold uppercase tracking-widest mb-4 text-primary">Le Studio Virtuel</p>
+          <h2 className="text-5xl md:text-7xl font-bold text-zinc-900 dark:text-white tracking-tighter mb-6">
+            Générez la{' '}
+            <span className="text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg,#10B981,#059669)' }}>Sagesse.</span>
+          </h2>
+          <p className="text-zinc-500 dark:text-slate-400 text-xl mb-12">Passez de l'idée à la publication en moins de 3 minutes. Sans carte de crédit.</p>
+
           {!showGenerator ? (
-            <>
-              <div className="text-center mb-8">
-                <h2 className="text-2xl font-bold mb-2">Essayez maintenant</h2>
-                <p className="text-muted-foreground">Générez votre premier visuel en quelques secondes</p>
-              </div>
-              <div className="text-center py-12 bg-background rounded-2xl border-2 border-dashed border-primary/20">
-                <Sparkles className="h-12 w-12 text-primary mx-auto mb-4" />
-                <p className="text-lg font-medium mb-4">Prêt à diffuser un rappel ?</p>
-                <Button onClick={() => setShowGenerator(true)} size="lg" className="bg-gradient-to-r from-primary to-accent">
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  Lancer le générateur
-                </Button>
-              </div>
-            </>
+            <div className="relative inline-block group">
+              <div className="absolute -inset-1 rounded-full blur opacity-30 group-hover:opacity-70 transition duration-700" style={{ background: 'linear-gradient(135deg,#10B981,#F0C040)' }} />
+              <button
+                onClick={() => setShowGenerator(true)}
+                className="relative flex items-center gap-3 bg-zinc-950 border border-zinc-800 text-white px-10 py-5 rounded-full text-lg font-semibold hover:bg-zinc-900 transition-colors active:scale-95"
+              >
+                <Zap className="h-5 w-5 text-primary fill-primary" />
+                Lancer le Générateur
+              </button>
+            </div>
           ) : (
             <GeneratorPage />
           )}
-        </div>
+        </motion.div>
       </section>
 
-      {/* Contact & Feedback Section */}
-      <section className="py-20 px-4 bg-muted/30">
-        <div className="container mx-auto max-w-4xl">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div>
-              <h2 className="text-3xl font-bold mb-6">Votre avis compte</h2>
-              <p className="text-muted-foreground text-lg mb-8">
-                Une suggestion ? Un commentaire ? Ou simplement envie de devenir testeur ?
-                N'hésitez pas à nous contacter, nous lisons chaque message avec attention.
-              </p>
+      {/* ══════════════════════════════════════════════
+          SECTION 6 — CONTACT + COLLAB
+      ══════════════════════════════════════════════ */}
+      <section className="relative z-10 py-20 px-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="w-full bg-white/60 dark:bg-slate-900/80 rounded-[3rem] p-2 md:p-3 border border-emerald-100 dark:border-slate-700 backdrop-blur-sm shadow-sm">
+            <div className="grid grid-cols-1 lg:grid-cols-2 rounded-[2.5rem] overflow-hidden">
 
-              <div className="space-y-4">
-                <div className="flex items-center gap-4 p-4 bg-background rounded-xl border border-primary/10">
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Mail className="h-6 w-6 text-primary" />
+              {/* Left: collab */}
+              <div className="relative bg-emerald-600 p-10 md:p-16 flex flex-col justify-between min-h-[420px] overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/50 via-transparent to-emerald-800/30" />
+                <div className="relative z-10 space-y-6">
+                  <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center">
+                    <Sparkles className="h-6 w-6 text-white" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Email de contact</p>
-                    <p className="font-semibold">elmalkidigital@gmail.com</p>
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/30 bg-white/10 text-white text-xs font-bold uppercase tracking-widest mb-4">
+                      Appel à la Collaboration
+                    </div>
+                    <h3 className="text-3xl md:text-4xl font-bold text-white mb-4">
+                      Chers <span className="text-emerald-100 italic">Prédicateurs</span>, unissons nos efforts
+                    </h3>
+                    <p className="text-emerald-100/80">
+                      HikmaClips a été conçu pour multiplier l'impact de vos rappels. Rejoignez notre programme d'accès anticipé et co-créez les prochaines fonctionnalités.
+                    </p>
                   </div>
                 </div>
+                <div className="relative z-10 mt-8">
+                  <button
+                    onClick={() => {
+                      const subject = encodeURIComponent("Demande de Collaboration - HikmaClips");
+                      const body = encodeURIComponent("As-salamu alaykum l'équipe HikmaClips,\n\nJe souhaiterais discuter d'une collaboration.");
+                      window.location.href = `mailto:contact@hikmaclips.fr?subject=${subject}&body=${body}`;
+                    }}
+                    className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-emerald-700 bg-white transition-all active:scale-95 hover:bg-emerald-50"
+                  >
+                    Demander une collaboration
+                    <MessageSquare className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
-            </div>
 
-            <Card className="border-primary/20 shadow-lg">
-              <CardContent className="p-8">
+              {/* Right: contact form */}
+              <div className="bg-white dark:bg-slate-800 p-10 md:p-16 flex flex-col justify-center">
+                <div className="mb-8">
+                  <h3 className="text-2xl font-bold text-zinc-900 dark:text-white mb-1">Votre avis compte</h3>
+                  <p className="text-zinc-500 dark:text-slate-400 text-sm">Notre équipe lit chaque message avec attention.</p>
+                  <div className="flex items-center gap-3 mt-4 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800">
+                    <Mail className="h-4 w-4 text-primary flex-shrink-0" />
+                    <span className="text-zinc-700 dark:text-slate-300 text-sm font-medium">elmalkidigital@gmail.com</span>
+                  </div>
+                </div>
+
                 <form className="space-y-4" onSubmit={handleContactSubmit}>
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input id="email" name="email" type="email" placeholder="votre@email.com" required />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="subject">Sujet</Label>
-                    <Input id="subject" name="subject" placeholder="Ex: Devenir testeur, Bug..." required />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="message">Message</Label>
-                    <Textarea
-                      id="message"
-                      name="message"
-                      placeholder="Dites-nous tout..."
-                      className="min-h-[120px]"
-                      required
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-semibold text-zinc-400 dark:text-slate-500 uppercase tracking-wider">Email</label>
+                    <input name="email" type="email" required placeholder="votre@email.com"
+                      className="w-full bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-xl px-4 py-3 text-zinc-900 dark:text-white text-sm placeholder:text-zinc-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:border-primary transition-all"
+                      style={{ '--tw-ring-color': 'rgba(16,185,129,0.3)' } as any}
                     />
                   </div>
-                  <Button
-                    type="submit"
-                    className="w-full bg-gradient-to-r from-primary to-accent"
-                    disabled={isSubmitting}
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-semibold text-zinc-500 dark:text-slate-400 uppercase tracking-wider">Sujet</label>
+                    <input name="subject" required placeholder="Ex: Devenir testeur, Bug..."
+                      className="w-full bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-xl px-4 py-3 text-zinc-900 dark:text-white text-sm placeholder:text-zinc-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:border-primary transition-all"
+                      style={{ '--tw-ring-color': 'rgba(16,185,129,0.3)' } as any}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-semibold text-zinc-500 dark:text-slate-400 uppercase tracking-wider">Message</label>
+                    <textarea name="message" required rows={3} placeholder="Dites-nous tout..."
+                      className="w-full bg-zinc-50 dark:bg-slate-700 border border-zinc-200 dark:border-slate-600 rounded-xl px-4 py-3 text-zinc-900 dark:text-white text-sm placeholder:text-zinc-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:border-primary transition-all resize-none"
+                      style={{ '--tw-ring-color': 'rgba(16,185,129,0.3)' } as any}
+                    />
+                  </div>
+                  <button type="submit" disabled={isSubmitting}
+                    className="w-full bg-primary text-white font-bold py-3.5 rounded-xl hover:bg-primary/90 transition-colors active:scale-[0.98] text-sm disabled:opacity-60"
                   >
                     {isSubmitting ? (
-                      <div className="flex items-center gap-2">
-                        <div className="h-4 w-4 animate-spin border-2 border-white border-t-transparent rounded-full" />
+                      <span className="flex items-center justify-center gap-2">
+                        <div className="h-4 w-4 animate-spin border-2 border-zinc-700 border-t-transparent rounded-full" />
                         Envoi en cours...
-                      </div>
+                      </span>
                     ) : (
-                      <>
-                        <MessageSquare className="mr-2 h-4 w-4" />
+                      <span className="flex items-center justify-center gap-2">
+                        <MessageSquare className="h-4 w-4" />
                         Envoyer le message
-                      </>
+                      </span>
                     )}
-                  </Button>
+                  </button>
                 </form>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Collaboration Section for Preachers */}
-      <section className="py-24 px-4 bg-islamic-pattern relative overflow-hidden">
-        <div className="container mx-auto max-w-5xl">
-          <div className="bg-card/50 backdrop-blur-xl border border-primary/20 rounded-[2.5rem] overflow-hidden shadow-2xl relative z-10">
+      {/* ══════════════════════════════════════════════
+          SECTION 7 — VIDEO / COLLABORATION BANNER
+      ══════════════════════════════════════════════ */}
+      <section className="relative z-10 py-20 px-4">
+        <div className="max-w-5xl mx-auto">
+          <motion.div
+            className="bg-white/80 dark:bg-slate-800/80 border border-emerald-100 dark:border-slate-700 shadow-sm rounded-[2.5rem] overflow-hidden"
+            initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+          >
             <div className="grid md:grid-cols-2 items-center">
               <div className="p-8 md:p-12 lg:p-16 space-y-6">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary border border-primary/20">
-                  <Sparkles className="h-4 w-4" />
-                  <span className="text-sm font-bold tracking-tight uppercase">Appel à la Collaboration</span>
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/20 bg-primary/5 text-primary text-sm font-bold uppercase tracking-wide">
+                  <Star className="h-4 w-4" />
+                  Programme Partenaire
                 </div>
-
-                <h2 className="text-3xl md:text-4xl font-bold leading-tight">
-                  Chers <span className="text-primary italic">Prédicateurs et Étudiants</span>, unissons nos efforts
+                <h2 className="text-3xl md:text-4xl font-bold text-zinc-900 dark:text-white leading-tight">
+                  Chers <span className="text-primary italic">Prédicateurs</span>,<br />unissons nos efforts
                 </h2>
-
-                <p className="text-muted-foreground text-lg leading-relaxed">
-                  Salamu alaykum chers frères dans la foi. HikmaClips a été conçu pour multiplier l'impact de vos rappels.
-                  Nous vous proposons une collaboration fraternelle pour faciliter la diffusion de la science utile à notre communauté.
+                <p className="text-zinc-500 dark:text-slate-400 leading-relaxed">
+                  Salamu alaykum chers frères. HikmaClips a été conçu pour multiplier l'impact de vos rappels. Nous vous proposons une collaboration fraternelle pour faciliter la diffusion de la science utile.
                 </p>
-
-                <div className="pt-4">
-                  <Button
-                    size="lg"
-                    className="h-14 px-8 rounded-2xl bg-primary hover:bg-primary/90 text-white font-bold gap-3 shadow-lg shadow-primary/20 transition-all active:scale-95"
-                    onClick={() => {
-                      const subject = encodeURIComponent("Demande de Collaboration - HikmaClips");
-                      const body = encodeURIComponent("As-salamu alaykum l'équipe HikmaClips,\n\nJe suis prédicateur/étudiant et je souhaiterais discuter d'une collaboration pour diffuser mes rappels via votre plateforme.");
-                      window.location.href = `mailto:contact@hikmaclips.fr?subject=${subject}&body=${body}`;
-                    }}
-                  >
-                    Demander une collaboration
-                    <MessageSquare className="h-5 w-5" />
-                  </Button>
-                </div>
+                <button
+                  className="h-14 px-8 rounded-2xl font-bold text-white flex items-center gap-3 transition-all active:scale-95"
+                  style={{ background: '#10B981', boxShadow: '0 8px 30px rgba(16,185,129,0.25)' }}
+                  onClick={() => {
+                    const s = encodeURIComponent("Demande de Collaboration - HikmaClips");
+                    const b = encodeURIComponent("As-salamu alaykum l'équipe HikmaClips,\n\nJe suis prédicateur/étudiant et je souhaiterais discuter d'une collaboration.");
+                    window.location.href = `mailto:contact@hikmaclips.fr?subject=${s}&body=${b}`;
+                  }}
+                >
+                  Demander une collaboration
+                  <MessageSquare className="h-5 w-5" />
+                </button>
               </div>
 
-              <div className="relative aspect-[9/16] md:h-[600px] bg-black group rounded-r-[2.5rem] md:rounded-l-none overflow-hidden ring-1 ring-primary/10 shadow-inner">
+              <div className="relative aspect-[9/16] md:h-[580px] bg-black group overflow-hidden">
                 <video
                   ref={videoRef}
                   className="absolute inset-0 w-full h-full object-contain cursor-pointer"
-                  autoPlay
-                  loop
-                  muted={isMuted}
-                  playsInline
+                  autoPlay loop muted={isMuted} playsInline
                   onClick={() => setIsMuted(!isMuted)}
                   poster="https://res.cloudinary.com/db2ljqpdt/video/upload/v1770664519/hikmaclips-promo_m0xswu.jpg"
                 >
                   <source src="https://res.cloudinary.com/db2ljqpdt/video/upload/v1770664519/hikmaclips-promo_m0xswu.mp4" type="video/mp4" />
                 </video>
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-                  <div className="h-16 w-16 rounded-full bg-primary/90 flex items-center justify-center text-white shadow-xl scale-90 group-hover:scale-100 transition-transform duration-300">
-                    <Play className="h-8 w-8 ml-1" />
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                  <div className="h-16 w-16 rounded-full bg-primary/90 flex items-center justify-center text-white shadow-xl scale-90 group-hover:scale-100 transition-transform">
+                    <Play className="h-7 w-7 ml-1" />
                   </div>
                 </div>
-
-                {/* Video Controls Overlay */}
                 <div className="absolute bottom-4 right-4 flex gap-2">
-                  <Button
-                    size="icon"
-                    variant="secondary"
-                    className="h-10 w-10 rounded-full bg-black/40 border-none backdrop-blur-md text-white hover:bg-black/60 transition-colors"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsMuted(!isMuted);
-                    }}
+                  <button
+                    className="h-10 w-10 rounded-full bg-black/50 border border-white/10 backdrop-blur-md text-white flex items-center justify-center hover:bg-black/70 transition-colors"
+                    onClick={(e) => { e.stopPropagation(); setIsMuted(!isMuted); }}
                   >
-                    {isMuted ? <Volume2 className="h-5 w-5 opacity-50" /> : <Volume2 className="h-5 w-5" />}
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="secondary"
-                    className="h-10 w-10 rounded-full bg-black/40 border-none backdrop-blur-md text-white hover:bg-black/60 transition-colors"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleFullscreen();
-                    }}
+                    <Volume2 className={cn("h-4 w-4", isMuted && "opacity-40")} />
+                  </button>
+                  <button
+                    className="h-10 w-10 rounded-full bg-black/50 border border-white/10 backdrop-blur-md text-white flex items-center justify-center hover:bg-black/70 transition-colors"
+                    onClick={(e) => { e.stopPropagation(); toggleFullscreen(); }}
                   >
-                    <Maximize className="h-5 w-5" />
-                  </Button>
+                    <Maximize className="h-4 w-4" />
+                  </button>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* Decorative Arabesque */}
-        <div className="absolute top-0 right-0 w-64 h-64 opacity-[0.03] pointer-events-none translate-x-1/2 -translate-y-1/2">
-          <Image
-            src="https://www.transparenttextures.com/patterns/arabesque.png"
-            alt="Decoration"
-            fill
-            className="object-contain"
-          />
+          </motion.div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-primary/10 py-12 px-4 bg-background/50">
-        <div className="container mx-auto">
+      {/* ══════════════════════════════════════════════
+          FOOTER
+      ══════════════════════════════════════════════ */}
+      <footer className="relative z-10 border-t border-emerald-100 dark:border-slate-800 mt-16 bg-white/80 dark:bg-slate-900/80">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-            <div className="flex items-center gap-2">
-              <Image
-                src="https://res.cloudinary.com/dhjwimevi/image/upload/v1770072891/ChatGPT_Image_2_f%C3%A9vr._2026_23_43_44_edeg9a.png"
-                alt="HikmaClips"
-                width={32}
-                height={32}
-                className="rounded-lg"
-              />
-              <span className="font-bold text-hikma-gradient">HikmaClips</span>
-              <span className="text-muted-foreground text-sm">v1.0.5</span>
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+                <Moon className="h-4 w-4 text-zinc-950" />
+              </div>
+              <span className="text-xl font-bold tracking-tight text-white">HikmaClips</span>
+              <span className="text-zinc-600 dark:text-slate-400 text-sm">v1.0.5</span>
             </div>
 
-            <div className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
-              <Link href="/privacy-policy" className="hover:text-primary transition-colors">
-                Politique de confidentialité
-              </Link>
-              <Link href="/terms-of-service" className="hover:text-primary transition-colors">
-                Conditions d'utilisation
-              </Link>
-            </div>
+            <nav className="flex flex-wrap justify-center gap-6 text-sm font-medium text-zinc-500 dark:text-slate-400">
+              <Link href="/privacy-policy" className="hover:text-primary transition-colors">Confidentialité</Link>
+              <Link href="/terms-of-service" className="hover:text-primary transition-colors">CGU</Link>
+              <Link href="/updates" className="hover:text-primary transition-colors">Nouveautés</Link>
+              <Link href="/feedback" className="hover:text-primary transition-colors">Feedback</Link>
+            </nav>
           </div>
 
-          <div className="mt-8 pt-8 border-t text-center text-sm text-muted-foreground">
-            <p>
-              © {new Date().getFullYear()} HikmaClips · Partagé par{' '}
-              <a
-                href="http://web-linecreator.fr"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary hover:underline"
-              >
-                web-linecreator.fr
-              </a>
-              {' '}· Meknès, Maroc
-            </p>
+          <div className="mt-8 pt-8 border-t border-emerald-100 dark:border-slate-800 text-center text-sm text-zinc-400 dark:text-slate-500">
+            © {new Date().getFullYear()} HikmaClips · Développé par{' '}
+            <a href="http://web-linecreator.fr" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+              web-linecreator.fr
+            </a>
+            {' '}· Meknès, Maroc
           </div>
         </div>
       </footer>

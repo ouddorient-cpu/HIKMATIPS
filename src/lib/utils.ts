@@ -75,3 +75,64 @@ export function getUserStats(): UserStats {
     return { streak: 0, lastVisit: '', totalVisits: 0, favoritesCount: 0 };
   }
 }
+
+// --- Collections System ---
+export interface Collection {
+  id: string;
+  name: string;
+  emoji: string;
+  createdAt: string;
+  items: Hikma[];
+}
+
+export function getCollections(): Collection[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem('hikma_collections');
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+
+export function saveCollections(collections: Collection[]) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem('hikma_collections', JSON.stringify(collections));
+  } catch {}
+}
+
+export function createCollection(name: string, emoji: string = '📚'): Collection {
+  const collection: Collection = {
+    id: Date.now().toString(),
+    name,
+    emoji,
+    createdAt: new Date().toISOString(),
+    items: [],
+  };
+  const collections = getCollections();
+  collections.push(collection);
+  saveCollections(collections);
+  return collection;
+}
+
+export function addToCollection(collectionId: string, hikma: Hikma): boolean {
+  const collections = getCollections();
+  const col = collections.find(c => c.id === collectionId);
+  if (!col) return false;
+  if (col.items.find(i => i.fr === hikma.fr)) return false;
+  col.items.push(hikma);
+  saveCollections(collections);
+  return true;
+}
+
+export function removeFromCollection(collectionId: string, hikmaFr: string) {
+  const collections = getCollections();
+  const col = collections.find(c => c.id === collectionId);
+  if (!col) return;
+  col.items = col.items.filter(i => i.fr !== hikmaFr);
+  saveCollections(collections);
+}
+
+export function deleteCollection(collectionId: string) {
+  const collections = getCollections().filter(c => c.id !== collectionId);
+  saveCollections(collections);
+}
