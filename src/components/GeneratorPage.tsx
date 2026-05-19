@@ -630,7 +630,7 @@ export default function GeneratorPage() {
         {/* Main Preview Container */}
         <main className={cn(
           "flex-1 preview-container relative overflow-hidden flex justify-center items-center",
-          "md:pb-24"
+          "md:pb-20"
         )}>
           <div className="relative w-full h-full flex items-center justify-center p-0 md:p-4">
             <div
@@ -766,6 +766,78 @@ export default function GeneratorPage() {
 
 
         </main>
+      </div>
+
+      {/* ── DESKTOP BOTTOM BAR ── */}
+      <div className="hidden md:flex fixed bottom-0 left-80 right-0 z-50 bg-background/95 backdrop-blur-md border-t border-border/50 px-6 py-3 items-center gap-4">
+        {/* Category tabs */}
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          {[
+            { id: 'coran',      icon: BookMarked, label: 'Coran'   },
+            { id: 'hadith',     icon: BookOpen,   label: 'Hadith'  },
+            { id: 'citadelle',  icon: Sparkles,   label: 'Douas'   },
+            { id: 'thematique', icon: LayoutGrid, label: 'Thème'   },
+            { id: 'ramadan',    icon: Moon,       label: 'Ramadan' },
+            { id: 'rabbana',    icon: Heart,      label: 'Rabbana' },
+          ].map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => { setCategory(cat.id as Category); setContentBuffer([]); fillBuffer(cat.id as Category, topic, 3); }}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-all",
+                category === cat.id
+                  ? "bg-primary text-primary-foreground border-primary shadow-md"
+                  : "bg-muted/60 text-muted-foreground border-transparent hover:border-primary/30 hover:text-foreground"
+              )}
+            >
+              <cat.icon className="w-3.5 h-3.5" />
+              {cat.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Topic input */}
+        <div className="flex-1 flex items-center gap-2 bg-muted/60 rounded-full border border-border px-4 h-9">
+          <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+          <input
+            value={topic}
+            onChange={(e) => setTopic(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleGenerateAiContent(); }}
+            placeholder="Thème : patience, gratitude, amour..."
+            className="flex-1 bg-transparent text-sm placeholder:text-muted-foreground/50 outline-none"
+          />
+          {topic && <button onClick={() => setTopic('')} className="text-muted-foreground/50 hover:text-foreground"><X className="w-3.5 h-3.5" /></button>}
+        </div>
+
+        {/* Action buttons */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button
+            onClick={handleFavorite}
+            className={cn("w-9 h-9 rounded-full border flex items-center justify-center transition-all hover:scale-110",
+              content && favorites.includes(content.content)
+                ? "bg-red-500/20 border-red-400/50 text-red-500"
+                : "bg-muted/60 border-border text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Heart className={cn("w-4 h-4", content && favorites.includes(content.content) ? "fill-current" : "")} />
+          </button>
+          <button onClick={handleDownloadImage} className="w-9 h-9 rounded-full bg-muted/60 border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-all hover:scale-110">
+            <Download className="w-4 h-4" />
+          </button>
+          <button onClick={handleShareImage} className="w-9 h-9 rounded-full bg-muted/60 border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-all hover:scale-110">
+            <Share2 className="w-4 h-4" />
+          </button>
+
+          {/* Generate button */}
+          <button
+            onClick={handleGenerateAiContent}
+            disabled={isGenerating}
+            className="flex items-center gap-2 px-5 h-9 rounded-full bg-primary text-primary-foreground font-bold text-sm hover:bg-primary/90 active:scale-95 transition-all shadow-lg shadow-primary/25 disabled:opacity-60"
+          >
+            {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            {isGenerating ? 'Génération...' : 'Générer'}
+          </button>
+        </div>
       </div>
 
       {/* 4. MOBILE FLOATING UI (Replaces multiple toolbars) */}
