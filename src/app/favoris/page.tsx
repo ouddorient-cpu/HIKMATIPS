@@ -3,16 +3,19 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { motion, AnimatePresence } from "framer-motion"
-import { Heart, Share2, Trash2, Bookmark } from "lucide-react"
+import { Share2, Trash2, Bookmark } from "lucide-react"
 import { getFavorites, toggleFavorite, Hikma } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export default function FavorisPage() {
     const [favorites, setFavorites] = useState<Hikma[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const { toast } = useToast();
 
     useEffect(() => {
         setFavorites(getFavorites());
+        setIsLoading(false);
     }, []);
 
     const handleRemove = (hikma: Hikma) => {
@@ -29,8 +32,16 @@ export default function FavorisPage() {
                 <p className="text-slate-500 mt-2">Tes pépites de sagesse enregistrées</p>
             </header>
 
+            {isLoading ? (
+                <div className="grid gap-4">
+                    {[0, 1, 2].map((i) => (
+                        <Skeleton key={i} className="h-24 rounded-3xl" />
+                    ))}
+                </div>
+            ) : null}
+
             <AnimatePresence mode="popLayout">
-                {favorites.length === 0 ? (
+                {!isLoading && favorites.length === 0 ? (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}

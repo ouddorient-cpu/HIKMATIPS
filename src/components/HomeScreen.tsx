@@ -22,14 +22,15 @@ import {
     Heart,
     BookMarked,
     BookOpen,
-    Moon,
     Loader2,
     ChevronLeft,
     ChevronRight,
     Play,
     Pause,
     Volume2,
-    VolumeX
+    VolumeX,
+    Menu,
+    Sliders,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { CloudinaryGallery } from "@/components/studio/CloudinaryGallery"
@@ -59,25 +60,25 @@ interface HikmaData {
 
 const ALL_MOCKS: HikmaData[] = [
     {
-        arabe: "إِنَّ مَعَ الْعُسْرِ يُسْرًا",
+        arabe: "إِنَّ مَعَ الْعُسْرِ يُسْرًا",
         fr: "À côté de la difficulté est, certes, une facilité.",
         source: "Sourate Ash-Sharh 94:6",
         category: "Coran"
     },
     {
-        arabe: "الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ",
+        arabe: "الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ",
         fr: "Louange à Allah, Seigneur de l'univers.",
         source: "Sourate Al-Fatiha 1:2",
         category: "Coran"
     },
     {
-        arabe: "وَتَوَكَّلْ عَلَى الْعَيِّ الْقَيُّومِ",
+        arabe: "وَتَوَكَّلْ عَلَى الْعَيِّ الْقَيُّومِ",
         fr: "Et place ta confiance en le Vivant qui ne meurt jamais.",
         source: "Sourate Al-Furqan 25:58",
         category: "Coran"
     },
     {
-        arabe: "إِنَّمَا الْأَعْمَالُ بِالنِّيَّاتِ",
+        arabe: "إِنَّمَا الْأَعْمَالُ بِالنِّيَّاتِ",
         fr: "Les actions ne valent que par les intentions.",
         source: "Sahih Bukhari",
         category: "Hadith"
@@ -89,7 +90,7 @@ const ALL_MOCKS: HikmaData[] = [
         category: "Citadelle"
     },
     {
-        arabe: "شَهْرُ رَمَضَانَ الَّذِي أُنْزِلَ فِيهِ الْقُرْآنُ",
+        arabe: "شَهْرُ رَمَضَانَ الَّذِي أُنْزِلَ فِيهِ الْقُرْآنُ",
         fr: "Le mois de Ramadan au cours duquel le Coran a été descendu.",
         source: "Sourate Al-Baqarah 2:185",
         category: "Ramadan"
@@ -110,6 +111,7 @@ export function HomeScreen() {
     const [isGalleryOpen, setIsGalleryOpen] = useState(false);
     const [isCategoryOpen, setIsCategoryOpen] = useState(false);
     const [isToolsOpen, setIsToolsOpen] = useState(false);
+    const [isToolsMenuOpen, setIsToolsMenuOpen] = useState(false);
     const [showOnboarding, setShowOnboarding] = useState(false);
     const [showSignInPopup, setShowSignInPopup] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState<string>("recherche-ia");
@@ -194,31 +196,23 @@ export function HomeScreen() {
         setIsBuffering(false);
     }, [isBuffering]);
 
-    const handleGenerateAiContent = async () => {
+    // silent=true suppresses the error toast and uses a mock fallback (used by auto-scroll)
+    const handleGenerateAiContent = async (silent = false) => {
         if (!user && generationCount >= 10) {
             setShowSignInPopup(true);
             return;
         }
 
-        // 1. If we have items in buffer, use one immediately
         if (buffer.length > 0) {
             const nextItem = buffer[0];
             const remaining = buffer.slice(1);
             setBuffer(remaining);
             setHikmaWithHistory(nextItem);
-
-            if (!user) {
-                setGenerationCount(prev => prev + 1);
-            }
-
-            // 2. Refill buffer in the background if it's getting low
-            if (remaining.length < 2) {
-                refillBuffer(selectedCategory, topic, 2);
-            }
+            if (!user) setGenerationCount(prev => prev + 1);
+            if (remaining.length < 2) refillBuffer(selectedCategory, topic, 2);
             return;
         }
 
-        // 3. Fallback to normal generation if buffer empty
         setIsGenerating(true);
         try {
             const result = await generateHadith({ category: selectedCategory as any, topic });
@@ -229,19 +223,21 @@ export function HomeScreen() {
                     source: result.source,
                     category: selectedCategory
                 });
-                if (!user) {
-                    setGenerationCount(prev => prev + 1);
-                }
-                // Also start filling buffer
+                if (!user) setGenerationCount(prev => prev + 1);
                 refillBuffer(selectedCategory, topic, 2);
             }
         } catch (error) {
-            console.error("Erreur génération IA Home:", error);
-            toast({
-                variant: 'destructive',
-                title: 'L\'Agent est occupé',
-                description: "Veuillez réessayer dans un instant.",
-            });
+            if (!silent) {
+                toast({
+                    variant: 'destructive',
+                    title: 'L\'Agent est occupé',
+                    description: "Veuillez réessayer dans un instant.",
+                });
+            } else {
+                // Auto-scroll fallback: show a random local hikma silently
+                const randomMock = ALL_MOCKS[Math.floor(Math.random() * ALL_MOCKS.length)];
+                setHikmaWithHistory(randomMock);
+            }
         } finally {
             setIsGenerating(false);
         }
@@ -284,9 +280,7 @@ export function HomeScreen() {
     const handleAddToCollection = useCallback((collectionId: string) => {
         const success = addToCollection(collectionId, { ...currentHikma });
         setShowCollectionPicker(false);
-        toast({
-            title: success ? 'Ajouté à la collection !' : 'Déjà dans cette collection',
-        });
+        toast({ title: success ? 'Ajouté à la collection !' : 'Déjà dans cette collection' });
     }, [currentHikma, toast]);
 
     const handlePasswordReset = async () => {
@@ -302,8 +296,15 @@ export function HomeScreen() {
         }
     };
 
+    const isNativeApp = typeof window !== 'undefined' && !!(window as any).Capacitor?.isNativePlatform?.();
+
     const handleGoogleAuth = async () => {
         if (!auth) return;
+        // signInWithPopup is not supported in Capacitor WebView — use email/password on native
+        if (isNativeApp) {
+            setAuthError('Connexion Google non disponible sur mobile. Utilisez email + mot de passe.');
+            return;
+        }
         setIsConnecting(true);
         setAuthError('');
         try {
@@ -328,12 +329,11 @@ export function HomeScreen() {
         }
         setIsConnecting(true);
         setAuthError('');
-
         try {
             if (authMode === 'signup') {
                 const cred = await createUserWithEmailAndPassword(auth, authEmail, authPassword);
                 await sendEmailVerification(cred.user);
-                toast({ title: 'Inscription réussie !', description: 'Un email de vérification a été envoyé. Consultez votre boîte mail.' });
+                toast({ title: 'Inscription réussie !', description: 'Un email de vérification a été envoyé.' });
             } else {
                 await signInWithEmailAndPassword(auth, authEmail, authPassword);
                 toast({ title: 'Connexion réussie', description: 'Bienvenue !' });
@@ -377,9 +377,8 @@ export function HomeScreen() {
             historyIndexRef.current = prevIdx;
             setHistoryIndex(prevIdx);
             setCurrentHikma(hikmaHistory[prevIdx]);
-            handleShuffleBackground();
         }
-    }, [historyIndex, hikmaHistory, handleShuffleBackground]);
+    }, [historyIndex, hikmaHistory]);
 
     const handleNext = useCallback(() => {
         if (historyIndex < hikmaHistory.length - 1) {
@@ -413,13 +412,19 @@ export function HomeScreen() {
     const swipeHandlers = useSwipeable({
         onSwipedUp: () => handleFullShuffle(),
         preventScrollOnSwipe: true,
-        trackMouse: true,
+        trackMouse: false,
         trackTouch: true,
-        delta: 10,
+        delta: 60,
         swipeDuration: 500,
     });
 
-    useEffect(() => { autoScrollFnRef.current = handleFullShuffle; }, [handleFullShuffle]);
+    // Auto-scroll uses silent mode to avoid error toasts
+    useEffect(() => {
+        autoScrollFnRef.current = () => {
+            handleGenerateAiContent(true);
+            handleShuffleBackground();
+        };
+    }, [handleGenerateAiContent, handleShuffleBackground]);
 
     useEffect(() => {
         return () => { if (autoScrollIntervalRef.current) clearInterval(autoScrollIntervalRef.current); };
@@ -433,7 +438,6 @@ export function HomeScreen() {
         setShowExplanation(false);
     }, [currentHikma]);
 
-    // Initial setup - runs only once
     useEffect(() => {
         updateStreak();
         const hasSeen = localStorage.getItem('hasSeenOnboarding');
@@ -442,7 +446,6 @@ export function HomeScreen() {
         setFavorites(getFavorites().map(f => f.fr));
         setUserCollections(getCollections());
 
-        // Set daily Hikma only once on mount
         const today = new Date();
         const dateSeed = today.getFullYear() * 365 + today.getMonth() * 31 + today.getDate();
         const dailyIndex = dateSeed % ALL_MOCKS.length;
@@ -452,8 +455,6 @@ export function HomeScreen() {
         setHistoryIndex(0);
         historyIndexRef.current = 0;
 
-        // Filter images internally to avoid dependency on outer scope variable `cloudinaryImages`
-        // which would cause linter warnings or stale closures if we put it in deps
         const validImages = PlaceHolderImages.filter(img =>
             img.imageUrl.includes('cloudinary.com') ||
             img.imageUrl.includes('dzagwz94z') ||
@@ -466,29 +467,24 @@ export function HomeScreen() {
             setBackground(validImages[bgIndex].imageUrl);
         }
 
-        // Pre-fill buffer on mount
         refillBuffer("recherche-ia", "", 2);
 
         return () => {
             isMountedRef.current = false;
             window.speechSynthesis?.cancel();
         };
-    }, []); // Empty dependency array ensures this runs strictly once
+    }, []);
 
-    // Event listeners configuration
     useEffect(() => {
-        // Listen for events from bottom nav
         const onGenerate = () => handleGenerateAiContent();
         const onTools = () => setIsToolsOpen(true);
-
         window.addEventListener('hikma:generate', onGenerate);
         window.addEventListener('hikma:tools', onTools);
-
         return () => {
             window.removeEventListener('hikma:generate', onGenerate);
             window.removeEventListener('hikma:tools', onTools);
         };
-    }, [handleGenerateAiContent]); // Depends on handleShuffleText which updates when hikma changes, but won't trigger the INIT logic loop anymore
+    }, [handleGenerateAiContent]);
 
     const handleFavorite = () => {
         if (!user && favorites.length >= 3) {
@@ -506,18 +502,8 @@ export function HomeScreen() {
             const canvas = await html2canvas(captureRef.current, { useCORS: true, scale: 3 });
             const base64Data = canvas.toDataURL('image/png').split(',')[1];
             const fileName = `hikma_share_${Date.now()}.png`;
-
-            const savedFile = await Filesystem.writeFile({
-                path: fileName,
-                data: base64Data,
-                directory: Directory.Cache,
-            });
-
-            await Share.share({
-                title: 'HikmaClips',
-                text: `${currentHikma.fr} - ${currentHikma.source}`,
-                files: [savedFile.uri],
-            });
+            const savedFile = await Filesystem.writeFile({ path: fileName, data: base64Data, directory: Directory.Cache });
+            await Share.share({ title: 'HikmaClips', text: `${currentHikma.fr} - ${currentHikma.source}`, files: [savedFile.uri] });
         } catch (error) {
             toast({ title: "Erreur", description: "Le partage a échoué.", variant: "destructive" });
         } finally {
@@ -531,15 +517,9 @@ export function HomeScreen() {
         try {
             const canvas = await html2canvas(captureRef.current, { useCORS: true, scale: 3 });
             const dataUrl = canvas.toDataURL('image/png');
-
             if (window.hasOwnProperty('Capacitor')) {
                 const base64Data = dataUrl.split(',')[1];
-                await Filesystem.writeFile({
-                    path: `hikma_${Date.now()}.png`,
-                    data: base64Data,
-                    directory: Directory.Documents,
-                    recursive: true
-                });
+                await Filesystem.writeFile({ path: `hikma_${Date.now()}.png`, data: base64Data, directory: Directory.Documents, recursive: true });
                 toast({ title: "Succès", description: "Image enregistrée !" });
             } else {
                 const link = document.createElement('a');
@@ -565,20 +545,26 @@ export function HomeScreen() {
 
     const isLiked = favorites.includes(currentHikma.fr);
 
+    // Tool menu items
+    const toolMenuItems = [
+        { icon: <Share2 className="w-5 h-5" />, label: 'Partager', action: () => { setIsToolsMenuOpen(false); handleShare(); } },
+        { icon: <Download className="w-5 h-5" />, label: 'Sauver', action: () => { setIsToolsMenuOpen(false); handleDownload(); } },
+        { icon: <ImageIcon className="w-5 h-5" />, label: 'Galerie', action: () => { setIsToolsMenuOpen(false); setIsGalleryOpen(true); } },
+        { icon: <Upload className="w-5 h-5" />, label: 'Photo', action: () => { setIsToolsMenuOpen(false); fileInputRef.current?.click(); } },
+        { icon: <RefreshCw className="w-5 h-5" />, label: 'Fond', action: () => { handleShuffleBackground(); setIsToolsMenuOpen(false); } },
+        { icon: <BookOpen className="w-5 h-5" />, label: 'Expliquer', action: () => { setIsToolsMenuOpen(false); handleExplain(); }, active: showExplanation },
+        { icon: <BookMarked className="w-5 h-5" />, label: 'Collection', action: () => { setIsToolsMenuOpen(false); setUserCollections(getCollections()); setShowCollectionPicker(true); } },
+        { icon: <Sliders className="w-5 h-5" />, label: 'Filtres', action: () => { setIsToolsMenuOpen(false); setIsToolsOpen(true); } },
+    ];
+
     return (
         <div
             {...swipeHandlers}
             className="fixed inset-0 w-full h-full bg-black overflow-hidden select-none touch-none"
         >
-            <input
-                type="file"
-                ref={fileInputRef}
-                className="hidden"
-                accept="image/*"
-                onChange={handleFileUpload}
-            />
+            <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileUpload} />
 
-            {/* Background Image Container (for capture) */}
+            {/* Background + Hikma content (for capture) */}
             <div ref={captureRef} className="absolute inset-0 w-full h-full overflow-hidden">
                 {background && (
                     <img
@@ -589,11 +575,9 @@ export function HomeScreen() {
                         crossOrigin="anonymous"
                     />
                 )}
-                {/* Overlays */}
                 <div className="absolute inset-0 bg-black/40" />
                 <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/70" />
 
-                {/* Content */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center">
                     {isGenerating && (
                         <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/20 backdrop-blur-sm z-50">
@@ -626,8 +610,6 @@ export function HomeScreen() {
                                     — {currentHikma.source} —
                                 </p>
                             </div>
-
-                            {/* TikTok Signature Overlay (Only in Capture/Preview) */}
                             {filters.showSignature && (
                                 <div className="mt-8 flex items-center justify-center gap-2 opacity-80 scale-110">
                                     <div className="p-1 rounded-full bg-black/40 backdrop-blur-md">
@@ -643,187 +625,191 @@ export function HomeScreen() {
                 </div>
             </div>
 
-            {/* Floating UI Elements (NOT for capture) */}
+            {/* ───── TOP BAR ─────
+                3-column flex: [Category] [Thème - centered] [Crown]
+                Using flex-1 on sides ensures true centering */}
+            <div className="absolute top-0 left-0 right-0 z-[60]" style={{ paddingTop: 'max(env(safe-area-inset-top), 14px)' }}>
+                <div className="flex items-center gap-2 px-4 pb-2">
+                    {/* Left */}
+                    <div className="flex-1 flex justify-start">
+                        <Button
+                            variant="ghost"
+                            onClick={() => setIsCategoryOpen(true)}
+                            className="h-9 px-3 rounded-full bg-black/30 backdrop-blur-xl border border-white/15 text-white font-bold flex items-center gap-1.5 shadow-lg"
+                        >
+                            <LayoutGrid className="w-3.5 h-3.5" />
+                            <span className="text-[9px] uppercase font-extrabold tracking-widest truncate max-w-[72px]">
+                                {selectedCategory === 'recherche-ia' ? "Agent" : selectedCategory}
+                            </span>
+                        </Button>
+                    </div>
 
-            {/* 1. TOP UI: Perfectly Symmetrical & Ultra-Transparent */}
-            <div className="absolute top-8 left-6 right-6 z-[60] flex justify-between items-center pointer-events-none">
-                <div className="pointer-events-auto">
-                    <Button
-                        variant="ghost"
-                        onClick={() => setIsCategoryOpen(true)}
-                        className="h-10 px-4 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 text-white font-bold flex items-center gap-2 group shadow-lg"
-                    >
-                        <LayoutGrid className="w-4 h-4 group-hover:rotate-90 transition-transform" />
-                        <span className="text-[9px] uppercase font-extrabold tracking-widest">{selectedCategory === 'recherche-ia' ? "Agent" : selectedCategory}</span>
-                    </Button>
+                    {/* Center — topic input, truly centered */}
+                    <div className="flex-none w-[152px]">
+                        <MobileTopicInput
+                            value={topic}
+                            onChange={setTopic}
+                            isVisible={true}
+                            placeholder="Thème..."
+                            onEnter={handleGenerateAiContent}
+                            position="top"
+                        />
+                    </div>
+
+                    {/* Right */}
+                    <div className="flex-1 flex justify-end">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setShowSignInPopup(true)}
+                            className="w-9 h-9 rounded-full bg-black/30 backdrop-blur-xl border border-white/15 text-yellow-400 shadow-lg"
+                        >
+                            <Crown className="w-4 h-4" />
+                        </Button>
+                    </div>
                 </div>
-
-                {/* Centered Top Search Bar */}
-                <div className="absolute left-1/2 -translate-x-1/2 w-full max-w-[170px] pointer-events-auto">
-                    <MobileTopicInput
-                        value={topic}
-                        onChange={setTopic}
-                        isVisible={true}
-                        placeholder="Thème..."
-                        onEnter={handleGenerateAiContent}
-                        position="top"
-                    />
-                </div>
-
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setShowSignInPopup(true)}
-                    className="pointer-events-auto w-10 h-10 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 text-yellow-500 shadow-lg"
-                >
-                    <Crown className="w-5 h-5" />
-                </Button>
             </div>
 
-            {/* 2. LEFT SIDE UI: Sidebar design tools (Moved to bottom) */}
-            <div className="absolute left-6 bottom-40 z-40 flex flex-col gap-4">
-                <button
-                    onClick={toggleAutoScroll}
-                    className={cn(
-                        "w-12 h-12 rounded-full backdrop-blur-md border shadow-2xl flex items-center justify-center active:scale-90 transition-all font-bold",
-                        isAutoScrolling
-                            ? "bg-emerald-500/30 border-emerald-500/60 text-emerald-400"
-                            : "bg-primary/20 dark:bg-primary/10 border-primary/30 dark:border-primary/20 text-primary-foreground dark:text-primary"
-                    )}
-                    aria-label="Défilement automatique"
-                >
-                    {isAutoScrolling ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
-                </button>
-
-                <button
-                    onClick={() => setIsGalleryOpen(true)}
-                    className="w-12 h-12 rounded-full bg-primary/20 dark:bg-primary/10 backdrop-blur-md border border-primary/30 dark:border-primary/20 text-primary-foreground dark:text-primary shadow-2xl flex items-center justify-center active:scale-90 transition-all font-bold"
-                    aria-label="Galerie Cloudinary"
-                >
-                    <ImageIcon className="w-5 h-5" />
-                </button>
-
-
-                <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="w-12 h-12 rounded-full bg-primary/20 dark:bg-primary/10 backdrop-blur-md border border-primary/30 dark:border-primary/20 text-primary-foreground dark:text-primary shadow-2xl flex items-center justify-center active:scale-90 transition-all font-bold"
-                    aria-label="Charger une image locale"
-                >
-                    <Upload className="w-5 h-5" />
-                </button>
-
-                <button
-                    onClick={handleShuffleBackground}
-                    className="w-12 h-12 rounded-full bg-primary/20 dark:bg-primary/10 backdrop-blur-md border border-primary/30 dark:border-primary/20 text-primary-foreground dark:text-primary shadow-2xl flex items-center justify-center active:scale-90 transition-all font-bold"
-                    aria-label="Changer l'image de fond"
-                >
-                    <RefreshCw className="w-5 h-5" />
-                </button>
-
-                <button
-                    onClick={handleExplain}
-                    className={cn(
-                        "w-12 h-12 rounded-full backdrop-blur-md border shadow-2xl flex items-center justify-center active:scale-90 transition-all font-bold",
-                        showExplanation
-                            ? "bg-amber-500/30 border-amber-500/60 text-amber-400"
-                            : "bg-primary/20 dark:bg-primary/10 border-primary/30 dark:border-primary/20 text-primary-foreground dark:text-primary"
-                    )}
-                    aria-label="Mode Étudiant — Explication"
-                >
-                    <BookOpen className="w-5 h-5" />
-                </button>
-
-                <button
-                    onClick={() => { setUserCollections(getCollections()); setShowCollectionPicker(true); }}
-                    className="w-12 h-12 rounded-full bg-primary/20 dark:bg-primary/10 backdrop-blur-md border border-primary/30 dark:border-primary/20 text-primary-foreground dark:text-primary shadow-2xl flex items-center justify-center active:scale-90 transition-all font-bold"
-                    aria-label="Ajouter à une collection"
-                >
-                    <BookMarked className="w-5 h-5" />
-                </button>
-            </div>
-
-            {/* 3. RIGHT SIDE UI: Action tools (Moved to bottom) */}
-            <div className="absolute right-6 bottom-40 z-40 flex flex-col gap-4">
-                <button
-                    onClick={handleSpeak}
-                    className={cn(
-                        "w-12 h-12 rounded-full backdrop-blur-md border shadow-2xl flex items-center justify-center active:scale-90 transition-all font-bold",
-                        isSpeaking
-                            ? "bg-blue-500/30 border-blue-500/60 text-blue-400"
-                            : "bg-primary/20 dark:bg-primary/10 border-primary/30 dark:border-primary/20 text-primary-foreground dark:text-primary"
-                    )}
-                    aria-label={isSpeaking ? "Arrêter la lecture" : "Écouter"}
-                >
-                    {isSpeaking ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-                </button>
-
+            {/* ───── RIGHT SIDE — 2 essential inline actions ───── */}
+            <div
+                className="absolute right-4 z-40 flex flex-col gap-3"
+                style={{ top: '50%', transform: 'translateY(-50%)' }}
+            >
                 <button
                     onClick={handleFavorite}
                     className={cn(
-                        "w-12 h-12 rounded-full backdrop-blur-md border shadow-2xl flex items-center justify-center active:scale-90 transition-all font-bold",
+                        "w-11 h-11 rounded-full backdrop-blur-md border shadow-2xl flex items-center justify-center active:scale-90 transition-all",
                         isLiked
-                            ? "bg-red-500/20 border-red-500/50 text-red-600 dark:text-red-500"
-                            : "bg-primary/20 dark:bg-primary/10 border-primary/30 dark:border-primary/20 text-primary-foreground dark:text-primary"
+                            ? "bg-red-500/30 border-red-400/60 text-red-400"
+                            : "bg-black/30 border-white/20 text-white"
                     )}
-                    aria-label="Ajouter aux favoris"
+                    aria-label="Favori"
                 >
                     <Heart className={cn("w-5 h-5", isLiked && "fill-current")} />
                 </button>
 
                 <button
-                    onClick={handleShare}
-                    className="w-12 h-12 rounded-full bg-primary/20 dark:bg-primary/10 backdrop-blur-md border border-primary/30 dark:border-primary/20 text-primary-foreground dark:text-primary shadow-2xl flex items-center justify-center active:scale-90 transition-all font-bold"
-                    aria-label="Partager"
+                    onClick={handleSpeak}
+                    className={cn(
+                        "w-11 h-11 rounded-full backdrop-blur-md border shadow-2xl flex items-center justify-center active:scale-90 transition-all",
+                        isSpeaking
+                            ? "bg-blue-500/30 border-blue-400/60 text-blue-400"
+                            : "bg-black/30 border-white/20 text-white"
+                    )}
+                    aria-label={isSpeaking ? "Arrêter la lecture" : "Écouter"}
                 >
-                    <Share2 className="w-5 h-5" />
-                </button>
-
-                <button
-                    onClick={handleDownload}
-                    className="w-12 h-12 rounded-full bg-primary/20 dark:bg-primary/10 backdrop-blur-md border border-primary/30 dark:border-primary/20 text-primary-foreground dark:text-primary shadow-2xl flex items-center justify-center active:scale-90 transition-all font-bold"
-                    aria-label="Télécharger"
-                >
-                    <Download className="w-5 h-5" />
+                    {isSpeaking ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
                 </button>
             </div>
 
-            {/* Bottom Tools */}
-            <div className="absolute bottom-10 left-0 right-0 z-40 flex items-center justify-center gap-3 px-4">
+            {/* ───── BOTTOM ROW — clearly above the nav bar ─────
+                Uses calc to clear the ~88px bottom nav + safe area */}
+            <div
+                className="absolute left-0 right-0 z-40 flex items-center justify-center gap-2 px-3"
+                style={{ bottom: 'calc(7rem + env(safe-area-inset-bottom, 0px))' }}
+            >
+                {/* Auto-scroll play/pause */}
+                <button
+                    onClick={toggleAutoScroll}
+                    className={cn(
+                        "w-11 h-11 rounded-full backdrop-blur-xl border shadow-lg flex items-center justify-center active:scale-90 transition-all shrink-0",
+                        isAutoScrolling
+                            ? "bg-emerald-500/30 border-emerald-400/60 text-emerald-400"
+                            : "bg-black/40 border-white/20 text-white/80"
+                    )}
+                    aria-label="Lecture automatique"
+                >
+                    {isAutoScrolling ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                </button>
+
+                {/* Prev */}
                 <button
                     onClick={handlePrev}
                     disabled={historyIndex === 0}
-                    className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 text-white flex items-center justify-center active:scale-90 transition-all disabled:opacity-30"
+                    className="w-11 h-11 rounded-full bg-black/40 backdrop-blur-xl border border-white/20 text-white flex items-center justify-center active:scale-90 transition-all disabled:opacity-30 shrink-0"
                     aria-label="Citation précédente"
                 >
-                    <ChevronLeft className="w-6 h-6" />
+                    <ChevronLeft className="w-5 h-5" />
                 </button>
 
+                {/* Generate — main CTA */}
                 <button
-                    onClick={handleGenerateAiContent}
-                    disabled={isGenerating || isBuffering}
-                    className={cn(
-                        "h-14 px-8 rounded-full bg-emerald-500/10 backdrop-blur-xl text-white flex items-center gap-3 active:scale-95 transition-all font-bold border border-white/20",
-                        (isGenerating || (isBuffering && buffer.length === 0)) && "opacity-80"
-                    )}
+                    onClick={() => handleGenerateAiContent()}
+                    disabled={isGenerating}
+                    className="h-12 px-5 rounded-full bg-emerald-500 hover:bg-emerald-400 text-white flex items-center gap-2 active:scale-95 transition-all font-bold shadow-lg shadow-emerald-500/40 disabled:opacity-70 min-w-0 flex-1 max-w-[180px] justify-center"
                 >
-                    {isGenerating || (isBuffering && buffer.length === 0) ? (
-                        <Loader2 className="w-6 h-6 animate-spin text-emerald-400" />
+                    {isGenerating ? (
+                        <Loader2 className="w-5 h-5 animate-spin shrink-0" />
                     ) : (
-                        <Zap className="w-6 h-6 text-emerald-400 fill-emerald-400" />
+                        <Zap className="w-5 h-5 fill-white shrink-0" />
                     )}
-                    <span className="font-bold tracking-tight text-emerald-500">Agent Hikma</span>
+                    <span className="text-sm font-bold truncate">Agent Hikma</span>
                 </button>
 
+                {/* Next */}
                 <button
                     onClick={handleNext}
-                    className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 text-white flex items-center justify-center active:scale-90 transition-all"
+                    className="w-11 h-11 rounded-full bg-black/40 backdrop-blur-xl border border-white/20 text-white flex items-center justify-center active:scale-90 transition-all shrink-0"
                     aria-label="Citation suivante"
                 >
-                    <ChevronRight className="w-6 h-6" />
+                    <ChevronRight className="w-5 h-5" />
+                </button>
+
+                {/* Tools hamburger */}
+                <button
+                    onClick={() => setIsToolsMenuOpen(true)}
+                    className="w-11 h-11 rounded-full bg-black/40 backdrop-blur-xl border border-white/20 text-white/80 flex items-center justify-center active:scale-90 transition-all shrink-0"
+                    aria-label="Outils"
+                >
+                    <Menu className="w-4 h-4" />
                 </button>
             </div>
 
-            {/* Mode Étudiant — Panneau d'explication */}
+            {/* ───── TOOLS SLIDE-UP MENU ───── */}
+            <AnimatePresence>
+                {isToolsMenuOpen && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="absolute inset-0 z-[80] bg-black/60 backdrop-blur-sm"
+                        onClick={() => setIsToolsMenuOpen(false)}
+                    >
+                        <motion.div
+                            initial={{ y: '100%' }}
+                            animate={{ y: 0 }}
+                            exit={{ y: '100%' }}
+                            transition={{ type: 'spring', stiffness: 300, damping: 35 }}
+                            className="absolute bottom-0 left-0 right-0 bg-slate-900/98 backdrop-blur-2xl rounded-t-3xl p-6"
+                            style={{ paddingBottom: 'calc(6.5rem + env(safe-area-inset-bottom, 0px))' }}
+                            onClick={e => e.stopPropagation()}
+                        >
+                            {/* Handle */}
+                            <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-5" />
+                            <h3 className="text-white font-bold text-base mb-4">Outils</h3>
+                            {/* Padding at bottom clears the bottom nav bar (~80px) */}
+
+                            <div className="grid grid-cols-4 gap-3">
+                                {toolMenuItems.map((item, i) => (
+                                    <button
+                                        key={i}
+                                        onClick={item.action}
+                                        className={cn(
+                                            "flex flex-col items-center gap-2 p-3 rounded-2xl transition-all active:scale-95",
+                                            item.active ? "bg-amber-500/30 border border-amber-400/40" : "bg-white/10 hover:bg-white/20"
+                                        )}
+                                    >
+                                        <span className={item.active ? "text-amber-400" : "text-white"}>{item.icon}</span>
+                                        <span className="text-[10px] text-white/70 font-medium">{item.label}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* ───── MODE ÉTUDIANT PANEL ───── */}
             <AnimatePresence>
                 {showExplanation && (
                     <motion.div
@@ -865,7 +851,7 @@ export function HomeScreen() {
                 )}
             </AnimatePresence>
 
-            {/* Collection Picker */}
+            {/* ───── COLLECTION PICKER ───── */}
             <AnimatePresence>
                 {showCollectionPicker && (
                     <motion.div
@@ -881,6 +867,7 @@ export function HomeScreen() {
                             exit={{ y: '100%' }}
                             transition={{ type: 'spring', stiffness: 300, damping: 35 }}
                             className="w-full bg-slate-900 rounded-t-3xl p-6 space-y-4"
+                            style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))' }}
                             onClick={e => e.stopPropagation()}
                         >
                             <div className="flex items-center justify-between">
@@ -910,14 +897,11 @@ export function HomeScreen() {
                 )}
             </AnimatePresence>
 
-            {/* Drawers & Popups */}
+            {/* Drawers */}
             <CloudinaryGallery
                 isOpen={isGalleryOpen}
                 onClose={() => setIsGalleryOpen(false)}
-                onSelect={(url) => {
-                    setBackground(url);
-                    setIsGalleryOpen(false);
-                }}
+                onSelect={(url) => { setBackground(url); setIsGalleryOpen(false); }}
             />
 
             <CategoryDrawer
@@ -926,8 +910,7 @@ export function HomeScreen() {
                 category={selectedCategory as any}
                 onSelectCategory={(cat) => {
                     setSelectedCategory(cat);
-                    setBuffer([]); // Clear buffer for new category
-                    // Generate AI content after changing category to show relevant content
+                    setBuffer([]);
                     setTimeout(handleGenerateAiContent, 300);
                 }}
             />
@@ -939,7 +922,6 @@ export function HomeScreen() {
                 setFilters={setFilters}
             />
 
-            {/* Onboarding Screen */}
             <AnimatePresence>
                 {showOnboarding && (
                     <OnboardingScreen onComplete={() => {
@@ -949,7 +931,7 @@ export function HomeScreen() {
                 )}
             </AnimatePresence>
 
-            {/* Login Popup */}
+            {/* Auth Popup */}
             <AlertDialog open={showSignInPopup} onOpenChange={setShowSignInPopup}>
                 <AlertDialogContent className="max-w-md bg-background/95 backdrop-blur-xl border border-primary/20 rounded-[32px] overflow-hidden">
                     <Button
@@ -966,9 +948,7 @@ export function HomeScreen() {
                                 <Crown className="w-8 h-8 text-yellow-500 animate-pulse" />
                             </div>
                         </div>
-                        <AlertDialogTitle className="text-2xl font-bold text-center">
-                            HikmaClips Premium
-                        </AlertDialogTitle>
+                        <AlertDialogTitle className="text-2xl font-bold text-center">HikmaClips Premium</AlertDialogTitle>
                         <AlertDialogDescription className="text-center px-4">
                             Connectez-vous gratuitement pour débloquer :
                             <span className="block mt-2 text-xs font-semibold space-y-1">
@@ -980,66 +960,45 @@ export function HomeScreen() {
                     </AlertDialogHeader>
 
                     <div className="space-y-4 py-4">
-                        <Button
-                            variant="outline"
-                            className="w-full flex items-center gap-3 border-slate-200 dark:border-slate-700 rounded-xl h-12"
-                            onClick={handleGoogleAuth}
-                            disabled={isConnecting}
-                        >
-                            <svg className="w-5 h-5" viewBox="0 0 24 24">
-                                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                            </svg>
-                            Continuer avec Google
-                        </Button>
-                        <div className="relative">
-                            <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-slate-200 dark:border-slate-700" /></div>
-                            <div className="relative flex justify-center text-xs uppercase"><span className="bg-background px-2 text-muted-foreground">ou</span></div>
-                        </div>
-                        <Input
-                            placeholder="Email"
-                            value={authEmail}
-                            onChange={(e) => setAuthEmail(e.target.value)}
-                            disabled={isConnecting}
-                        />
-                        <Input
-                            type="password"
-                            placeholder="Mot de passe"
-                            value={authPassword}
-                            onChange={(e) => setAuthPassword(e.target.value)}
-                            disabled={isConnecting}
-                        />
+                        {!isNativeApp && (
+                            <>
+                                <Button
+                                    variant="outline"
+                                    className="w-full flex items-center gap-3 border-slate-200 dark:border-slate-700 rounded-xl h-12"
+                                    onClick={handleGoogleAuth}
+                                    disabled={isConnecting}
+                                >
+                                    <svg className="w-5 h-5" viewBox="0 0 24 24">
+                                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                                    </svg>
+                                    Continuer avec Google
+                                </Button>
+                                <div className="relative">
+                                    <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-slate-200 dark:border-slate-700" /></div>
+                                    <div className="relative flex justify-center text-xs uppercase"><span className="bg-background px-2 text-muted-foreground">ou</span></div>
+                                </div>
+                            </>
+                        )}
+                        <Input placeholder="Email" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} disabled={isConnecting} />
+                        <Input type="password" placeholder="Mot de passe" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} disabled={isConnecting} />
                         {authError && <p className="text-xs text-red-500 text-center">{authError}</p>}
-                        <Button
-                            className="w-full bg-primary hover:bg-primary/90"
-                            onClick={handleEmailAuth}
-                            disabled={isConnecting}
-                        >
+                        <Button className="w-full bg-primary hover:bg-primary/90" onClick={handleEmailAuth} disabled={isConnecting}>
                             {authMode === 'login' ? 'Se connecter' : "S'inscrire"}
                         </Button>
                         {authMode === 'login' && (
-                            <button
-                                className="w-full text-xs text-muted-foreground hover:text-primary hover:underline"
-                                onClick={handlePasswordReset}
-                                type="button"
-                            >
+                            <button className="w-full text-xs text-muted-foreground hover:text-primary hover:underline" onClick={handlePasswordReset} type="button">
                                 Mot de passe oublié ?
                             </button>
                         )}
-                        <button
-                            className="w-full text-xs text-muted-foreground hover:underline"
-                            onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
-                        >
+                        <button className="w-full text-xs text-muted-foreground hover:underline" onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}>
                             {authMode === 'login' ? "Pas de compte ? S'inscrire" : "Déjà un compte ? Se connecter"}
                         </button>
                     </div>
                 </AlertDialogContent>
             </AlertDialog>
-
-            {/* Mobile Navigation Indicator / Margin Fix */}
-            <div className="absolute bottom-24 left-0 right-0 pointer-events-none" />
         </div>
     )
 }

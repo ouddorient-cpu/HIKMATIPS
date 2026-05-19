@@ -185,6 +185,14 @@ async function generateFromLocal(
       return { content: item.content, source: item.source };
     }
 
+    // Fallback pour recherche-ia, auto, thematique : utilise la base authentiques
+    if (category === 'recherche-ia' || category === 'auto' || category === 'thematique') {
+      const source = db.authentiques?.length > 0 ? db.authentiques : db.hadiths;
+      const filtered = filterByTopic(source, topic);
+      const item = getRandomItem(filtered);
+      return { content: item.content, source: item.source };
+    }
+
     return null;
   } catch {
     return null;

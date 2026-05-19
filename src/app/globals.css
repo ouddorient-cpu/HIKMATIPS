@@ -37,6 +37,12 @@
 
     --chart-1: 160 84% 39%;
     --chart-2: 45 86% 60%;
+
+    /* Safe area insets pour Capacitor / PWA */
+    --sat: env(safe-area-inset-top, 0px);
+    --sar: env(safe-area-inset-right, 0px);
+    --sab: env(safe-area-inset-bottom, 0px);
+    --sal: env(safe-area-inset-left, 0px);
   }
 
   .dark {
@@ -178,6 +184,11 @@
 }
 
 @layer utilities {
+
+  /* Safe area insets — utilitaires Capacitor / PWA */
+  .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .pt-safe { padding-top: env(safe-area-inset-top, 0px); }
+  .mb-safe { margin-bottom: env(safe-area-inset-bottom, 0px); }
 
   /* Backdrop Blur */
   .backdrop-blur-sm {

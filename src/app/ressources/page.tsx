@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
+import Fuse from 'fuse.js';
 import { BookOpen, Search, BookMarked, Moon, Heart, Library, Sparkles } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -71,18 +72,14 @@ export default function RessourcesPage() {
 
   const filteredHadiths = useMemo(() => {
     if (!search.trim()) return Hadiths.slice(0, 50);
-    const q = search.toLowerCase();
-    return Hadiths.filter(
-      h => h.content.toLowerCase().includes(q) || h.source.toLowerCase().includes(q)
-    ).slice(0, 50);
+    const fuse = new Fuse(Hadiths, { keys: ['content', 'source'], threshold: 0.4 });
+    return fuse.search(search.trim()).map(r => r.item).slice(0, 50);
   }, [search]);
 
   const filteredVersets = useMemo(() => {
     if (!search.trim()) return VersetsCoraniques.slice(0, 50);
-    const q = search.toLowerCase();
-    return VersetsCoraniques.filter(
-      v => v.content.toLowerCase().includes(q) || v.source.toLowerCase().includes(q)
-    ).slice(0, 50);
+    const fuse = new Fuse(VersetsCoraniques, { keys: ['content', 'source'], threshold: 0.4 });
+    return fuse.search(search.trim()).map(r => r.item).slice(0, 50);
   }, [search]);
 
   // Recherche dans les 9 livres

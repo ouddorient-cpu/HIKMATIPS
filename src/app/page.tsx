@@ -1,9 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Capacitor } from '@capacitor/core';
-import dynamic from 'next/dynamic';
 import { Loader2 } from 'lucide-react';
+import dynamic from 'next/dynamic';
 
 function LoadingScreen() {
   return (
@@ -16,30 +14,11 @@ function LoadingScreen() {
   );
 }
 
-const HomeScreen = dynamic(() => import('@/components/HomeScreen').then(mod => ({ default: mod.HomeScreen })), {
-  loading: () => <LoadingScreen />,
-  ssr: false,
-});
-
 const LandingPage = dynamic(() => import('@/components/LandingPage'), {
   loading: () => <LoadingScreen />,
   ssr: false,
 });
 
 export default function Home() {
-  const [isNative, setIsNative] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false);
-
-  useEffect(() => {
-    setIsNative(Capacitor.isNativePlatform());
-    setIsLoaded(true);
-  }, []);
-
-  if (!isLoaded) {
-    return <LoadingScreen />;
-  }
-
-  // Si on est sur l'APK (Android/iOS), on lance directement l'app (HomeScreen)
-  // Sinon, sur le Web, on affiche la Landing Page marketing
-  return isNative ? <HomeScreen /> : <LandingPage />;
+  return <LandingPage />;
 }

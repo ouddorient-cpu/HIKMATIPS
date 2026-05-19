@@ -95,7 +95,7 @@ const WHY = [
 ];
 
 export default function LandingPage() {
-  const [showGenerator, setShowGenerator] = useState(false);
+  const [showGenerator, setShowGenerator] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const [isMuted, setIsMuted] = useState(true);

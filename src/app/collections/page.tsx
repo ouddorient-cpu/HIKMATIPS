@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { getCollections, createCollection, deleteCollection, removeFromCollection, type Collection } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const EMOJIS = ['📚', '🌙', '⭐', '🕌', '🤲', '💎', '🌿', '🔥', '✨', '❤️'];
 
@@ -17,10 +18,12 @@ export default function CollectionsPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState('');
   const [newEmoji, setNewEmoji] = useState('📚');
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
     setCollections(getCollections());
+    setIsLoading(false);
   }, []);
 
   const refresh = () => {
@@ -142,8 +145,16 @@ export default function CollectionsPage() {
         )}
       </AnimatePresence>
 
+      {isLoading ? (
+        <div className="grid gap-4">
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} className="h-24 rounded-3xl" />
+          ))}
+        </div>
+      ) : null}
+
       <AnimatePresence mode="popLayout">
-        {collections.length === 0 ? (
+        {!isLoading && collections.length === 0 ? (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
             className="text-center py-20 border-2 border-dashed border-muted rounded-3xl">
             <BookMarked className="w-12 h-12 mx-auto text-muted-foreground/30 mb-4" />
