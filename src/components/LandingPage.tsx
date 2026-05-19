@@ -24,7 +24,6 @@ import {
     Maximize,
     Volume2,
     ArrowRight,
-    Zap,
 } from 'lucide-react';
 import { searchHadiths, DetailedHadith } from '@/lib/hadith-search';
 import { generateExplanation } from '@/ai/flows/generate-hadith';
@@ -95,7 +94,6 @@ const WHY = [
 ];
 
 export default function LandingPage() {
-  const [showGenerator, setShowGenerator] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const [isMuted, setIsMuted] = useState(true);
@@ -131,8 +129,7 @@ export default function LandingPage() {
   };
 
   const scrollToApp = () => {
-    setShowGenerator(true);
-    setTimeout(() => document.getElementById('app-section')?.scrollIntoView({ behavior: 'smooth' }), 100);
+    document.getElementById('app-section')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   return (
@@ -143,8 +140,26 @@ export default function LandingPage() {
       <div className="fixed top-1/4 -right-64 w-[600px] h-[600px] rounded-full pointer-events-none z-0" style={{ background: 'radial-gradient(circle,rgba(16,185,129,0.08) 0%,transparent 70%)', filter: 'blur(80px)' }} />
       <div className="fixed bottom-0 -left-64 w-[500px] h-[500px] rounded-full pointer-events-none z-0" style={{ background: 'radial-gradient(circle,rgba(240,192,64,0.06) 0%,transparent 70%)', filter: 'blur(80px)' }} />
 
-      {/* ── HERO (unchanged) ── */}
+      {/* ── HERO ── */}
       <HeroModern onScrollToApp={scrollToApp} />
+
+      {/* ══════════════════════════════════════════════
+          SECTION 0 — GENERATOR (visible dès l'accueil)
+      ══════════════════════════════════════════════ */}
+      <section id="app-section" className="relative z-10 py-20 px-4 scroll-mt-16 flex flex-col items-center text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+          className="w-full max-w-3xl"
+        >
+          <p className="text-sm font-bold uppercase tracking-widest mb-4 text-primary">Le Studio Virtuel</p>
+          <h2 className="text-4xl md:text-6xl font-bold text-zinc-900 dark:text-white tracking-tighter mb-4">
+            Générez la{' '}
+            <span className="text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg,#10B981,#059669)' }}>Sagesse.</span>
+          </h2>
+          <p className="text-zinc-500 dark:text-slate-400 text-lg mb-10">De l'idée à la publication en moins de 3 minutes.</p>
+          <GeneratorPage />
+        </motion.div>
+      </section>
 
       {/* ══════════════════════════════════════════════
           SECTION 1 — LIBRARY
@@ -442,38 +457,6 @@ export default function LandingPage() {
             </Link>
           </motion.div>
         </div>
-      </section>
-
-      {/* ══════════════════════════════════════════════
-          SECTION 5 — GENERATOR CTA
-      ══════════════════════════════════════════════ */}
-      <section id="app-section" className="relative z-10 py-24 px-4 scroll-mt-16 flex flex-col items-center text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-          className="w-full max-w-3xl"
-        >
-          <p className="text-sm font-bold uppercase tracking-widest mb-4 text-primary">Le Studio Virtuel</p>
-          <h2 className="text-5xl md:text-7xl font-bold text-zinc-900 dark:text-white tracking-tighter mb-6">
-            Générez la{' '}
-            <span className="text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg,#10B981,#059669)' }}>Sagesse.</span>
-          </h2>
-          <p className="text-zinc-500 dark:text-slate-400 text-xl mb-12">Passez de l'idée à la publication en moins de 3 minutes. Sans carte de crédit.</p>
-
-          {!showGenerator ? (
-            <div className="relative inline-block group">
-              <div className="absolute -inset-1 rounded-full blur opacity-30 group-hover:opacity-70 transition duration-700" style={{ background: 'linear-gradient(135deg,#10B981,#F0C040)' }} />
-              <button
-                onClick={() => setShowGenerator(true)}
-                className="relative flex items-center gap-3 bg-zinc-950 border border-zinc-800 text-white px-10 py-5 rounded-full text-lg font-semibold hover:bg-zinc-900 transition-colors active:scale-95"
-              >
-                <Zap className="h-5 w-5 text-primary fill-primary" />
-                Lancer le Générateur
-              </button>
-            </div>
-          ) : (
-            <GeneratorPage />
-          )}
-        </motion.div>
       </section>
 
       {/* ══════════════════════════════════════════════
