@@ -23,7 +23,8 @@ export async function searchHadiths(query: string): Promise<DetailedHadith[]> {
 
     for (const bookName of BOOKS) {
         try {
-            const base = process.env.NEXT_PUBLIC_BASE_PATH || '';
+            const envBase = process.env.NEXT_PUBLIC_BASE_PATH || '';
+            const base = envBase || (typeof window !== 'undefined' && window.location.pathname.startsWith('/HIKMATIPS') ? '/HIKMATIPS' : '');
             const response = await fetch(`${base}/data/hadiths/${bookName}.json`);
             if (!response.ok) continue;
 

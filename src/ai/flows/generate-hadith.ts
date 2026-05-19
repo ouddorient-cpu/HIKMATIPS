@@ -30,10 +30,22 @@ interface HadithDatabase {
 // Cache pour la base de données
 let cachedDatabase: HadithDatabase | null = null;
 
+function getBasePath(): string {
+  // Build-time injection (GitHub Actions sets NEXT_PUBLIC_BASE_PATH=/HIKMATIPS)
+  const envBase = process.env.NEXT_PUBLIC_BASE_PATH || '';
+  if (envBase) return envBase;
+  // Runtime fallback: detect from window.location
+  if (typeof window !== 'undefined') {
+    const p = window.location.pathname;
+    if (p.startsWith('/HIKMATIPS')) return '/HIKMATIPS';
+  }
+  return '';
+}
+
 async function loadDatabase(): Promise<HadithDatabase> {
   if (cachedDatabase) return cachedDatabase;
 
-  const base = process.env.NEXT_PUBLIC_BASE_PATH || '';
+  const base = getBasePath();
 
   try {
     const [hadithsResponse, citadelleResponse, authentiquesResponse, rabbanaResponse] = await Promise.all([

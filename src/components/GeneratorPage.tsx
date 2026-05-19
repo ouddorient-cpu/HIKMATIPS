@@ -316,14 +316,12 @@ export default function GeneratorPage() {
       } else {
         throw new Error('La génération a échoué ou n\'a retourné aucun contenu.');
       }
-    } catch {
-      const isLocal = ['rabbana', 'coran', 'hadith', 'ramadan', 'citadelle'].includes(category);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '';
       toast({
         variant: 'destructive',
-        title: isLocal ? 'Erreur de chargement' : 'Service temporairement indisponible',
-        description: isLocal
-          ? 'Impossible de charger le contenu. Réessayez.'
-          : 'Vérifiez votre connexion et réessayez.',
+        title: 'Erreur de génération',
+        description: msg || 'Impossible de charger le contenu. Réessayez.',
       });
     } finally {
       setIsGenerating(false);
