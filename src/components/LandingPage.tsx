@@ -1,18 +1,15 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import Image from 'next/image';
+import { useState, useRef } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import {
-    Share2,
     Download,
     BookOpen,
     Rocket,
     MessageCircle,
     BookMarked,
     Sparkles,
-    Users,
     Moon,
     Mail,
     MessageSquare,
@@ -25,12 +22,6 @@ import {
     Volume2,
     ArrowRight,
 } from 'lucide-react';
-import { searchHadiths, DetailedHadith } from '@/lib/hadith-search';
-import { generateExplanation } from '@/ai/flows/generate-hadith';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { initializeFirebase } from '@/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
@@ -59,21 +50,6 @@ const floatStyles = `
   .glass{background:rgba(255,255,255,0.75);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(16,185,129,0.12);box-shadow:0 4px 32px rgba(16,185,129,0.06),0 1px 0 rgba(255,255,255,0.9) inset;}
   .glass:hover{border-color:rgba(16,185,129,0.3);box-shadow:0 8px 40px rgba(16,185,129,0.1);}
 `;
-
-/* ─── Book card data ─── */
-const BOOKS = [
-  { title: 'Sahih Al-Bukhari', label: 'Authentique', count: '7 563 textes', color: '#F0C040', delay: 'float-1' },
-  { title: 'Sahih Muslim',     label: 'Authentique', count: '3 033 textes', color: '#10B981', delay: 'float-2' },
-  { title: 'Al-Muwatta',       label: 'Héritage',    count: 'Imam Malik',   color: '#a78bfa', delay: 'float-3' },
-];
-
-/* ─── Features bento data ─── */
-const FEATURES = [
-  { icon: BookMarked, label: 'Versets Coraniques', desc: 'Recherche par sourate ou mot-clé avec traduction certifiée et typographie Othmani.', large: true, glow: '#10B981' },
-  { icon: BookOpen,   label: '9 Recueils Majeurs', desc: 'Hadiths classifiés par degré d\'authenticité.',                                     large: false, glow: '#F0C040' },
-  { icon: Moon,       label: 'Rappels & Citations', desc: 'Bibliothèque de paroles de savants prête à partager.',                              large: false, glow: '#818cf8' },
-  { icon: Download,   label: 'Export Ultra HD',     desc: 'Formats verticaux (Reels, Shorts) et horizontaux (YouTube) optimisés.',             large: true,  glow: '#10B981' },
-];
 
 /* ─── Audience tiles ─── */
 const AUDIENCE = [
@@ -151,12 +127,12 @@ export default function LandingPage() {
           initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
           className="w-full max-w-3xl"
         >
-          <p className="text-sm font-bold uppercase tracking-widest mb-4 text-primary">Le Studio Virtuel</p>
+          <p className="text-sm font-bold uppercase tracking-widest mb-4 text-primary">Agent IA — Coran & Sunnah</p>
           <h2 className="text-4xl md:text-6xl font-bold text-zinc-900 dark:text-white tracking-tighter mb-4">
-            Générez la{' '}
-            <span className="text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg,#10B981,#059669)' }}>Sagesse.</span>
+            Génère un rappel{' '}
+            <span className="text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg,#10B981,#059669)' }}>authentique.</span>
           </h2>
-          <p className="text-zinc-500 dark:text-slate-400 text-lg mb-10">De l'idée à la publication en moins de 3 minutes.</p>
+          <p className="text-zinc-500 dark:text-slate-400 text-lg mb-10">Hadith, verset coranique ou doua — sélectionne la catégorie et publie en quelques secondes.</p>
           <GeneratorPage />
         </motion.div>
       </section>
@@ -175,16 +151,16 @@ export default function LandingPage() {
             >
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm font-medium" style={{ borderColor: 'rgba(16,185,129,0.3)', background: 'rgba(16,185,129,0.08)', color: '#059669' }}>
                 <Library className="h-4 w-4" />
-                Sources Authentiques
+                Hadiths & Versets Authentiques
               </div>
 
               <h2 className="text-4xl md:text-6xl font-bold tracking-tighter leading-[1.1]">
-                <span className="text-zinc-500 dark:text-slate-400">Héritage vérifié.</span><br />
-                <span className="text-zinc-900 dark:text-white">Création sereine.</span>
+                <span className="text-zinc-500 dark:text-slate-400">Seulement des sources</span><br />
+                <span className="text-zinc-900 dark:text-white">vérifiées et authentiques.</span>
               </h2>
 
               <p className="text-zinc-600 dark:text-slate-400 text-lg sm:text-xl leading-relaxed max-w-lg">
-                Ne perdez plus des heures à vérifier vos sources. Accédez instantanément aux 9 recueils majeurs, authentifiés et prêts pour vos montages.
+                Bukhari, Muslim, Abu Dawud, Tirmidhi, Nasai, Ibn Majah, Ahmad, Malik, Darimi — les 9 recueils majeurs de hadiths authentiques, classés par degré de fiabilité, en français.
               </p>
 
               <div className="grid sm:grid-cols-2 gap-4">
@@ -291,9 +267,9 @@ export default function LandingPage() {
           >
             <div>
               <p className="text-primary text-sm font-bold uppercase tracking-widest mb-3">Fonctionnalités</p>
-              <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-zinc-900 dark:text-white">L'Arsenal du Créateur</h2>
+              <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-zinc-900 dark:text-white">Outils pour diffuser la Sunnah</h2>
             </div>
-            <p className="text-zinc-500 dark:text-slate-400 text-lg max-w-sm">Tout ce dont vous avez besoin pour produire du contenu percutant.</p>
+            <p className="text-zinc-500 dark:text-slate-400 text-lg max-w-sm">Hadiths, versets coraniques, douas — crée et publie du contenu islamique authentique rapidement.</p>
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -369,10 +345,10 @@ export default function LandingPage() {
               initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
             >
               <h2 className="text-3xl md:text-5xl font-bold text-zinc-900 dark:text-white leading-tight">
-                Conçu pour<br />les porteurs<br />
-                <span className="text-primary">de message.</span>
+                Pour qui<br />est fait<br />
+                <span className="text-primary">HikmaClips ?</span>
               </h2>
-              <p className="text-zinc-500 dark:text-slate-400">Une architecture pensée pour la Dawa numérique francophone.</p>
+              <p className="text-zinc-500 dark:text-slate-400">Pour tout musulman qui veut faire de la da'wa sur les réseaux sociaux avec du contenu authentique.</p>
             </motion.div>
 
             {/* Right: tiles + checklist */}
@@ -479,10 +455,10 @@ export default function LandingPage() {
                       Appel à la Collaboration
                     </div>
                     <h3 className="text-3xl md:text-4xl font-bold text-white mb-4">
-                      Chers <span className="text-emerald-100 italic">Prédicateurs</span>, unissons nos efforts
+                      Collaboration avec les <span className="text-emerald-100 italic">Prédicateurs</span>
                     </h3>
                     <p className="text-emerald-100/80">
-                      HikmaClips a été conçu pour multiplier l'impact de vos rappels. Rejoignez notre programme d'accès anticipé et co-créez les prochaines fonctionnalités.
+                      Imam, prédicateur ou association islamique ? Contactez-nous pour un accès premium gratuit et participez au développement de HikmaClips.
                     </p>
                   </div>
                 </div>
@@ -572,10 +548,10 @@ export default function LandingPage() {
                   Programme Partenaire
                 </div>
                 <h2 className="text-3xl md:text-4xl font-bold text-zinc-900 dark:text-white leading-tight">
-                  Chers <span className="text-primary italic">Prédicateurs</span>,<br />unissons nos efforts
+                  Partenariat <span className="text-primary italic">Prédicateurs</span>
                 </h2>
                 <p className="text-zinc-500 dark:text-slate-400 leading-relaxed">
-                  Salamu alaykum chers frères. HikmaClips a été conçu pour multiplier l'impact de vos rappels. Nous vous proposons une collaboration fraternelle pour faciliter la diffusion de la science utile.
+                  As-salamu alaykum. HikmaClips propose un partenariat gratuit aux imams, prédicateurs et associations qui souhaitent diffuser des contenus islamiques authentiques sur les réseaux sociaux.
                 </p>
                 <button
                   className="h-14 px-8 rounded-2xl font-bold text-white flex items-center gap-3 transition-all active:scale-95"
