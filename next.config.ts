@@ -1,9 +1,10 @@
 import type { NextConfig } from 'next';
 import withPWA from '@ducanh2912/next-pwa';
 
+const isCapacitorBuild = process.env.NEXT_PUBLIC_EXPORT === 'true';
+
 const nextConfig: NextConfig = {
-  output: 'export',
-  trailingSlash: true,
+  ...(isCapacitorBuild ? { output: 'export', trailingSlash: true } : {}),
   /* config options here */
   typescript: {
     ignoreBuildErrors: true,
