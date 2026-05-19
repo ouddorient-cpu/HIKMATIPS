@@ -33,12 +33,14 @@ let cachedDatabase: HadithDatabase | null = null;
 async function loadDatabase(): Promise<HadithDatabase> {
   if (cachedDatabase) return cachedDatabase;
 
+  const base = process.env.NEXT_PUBLIC_BASE_PATH || '';
+
   try {
     const [hadithsResponse, citadelleResponse, authentiquesResponse, rabbanaResponse] = await Promise.all([
-      fetch('/data/hadiths.json'),
-      fetch('/data/hisn-al-muslim.json'),
-      fetch('/data/hadiths-authentiques.json'),
-      fetch('/data/rabbana.json')
+      fetch(`${base}/data/hadiths.json`),
+      fetch(`${base}/data/hisn-al-muslim.json`),
+      fetch(`${base}/data/hadiths-authentiques.json`),
+      fetch(`${base}/data/rabbana.json`)
     ]);
 
     if (!hadithsResponse.ok) throw new Error('Failed to load hadiths database');

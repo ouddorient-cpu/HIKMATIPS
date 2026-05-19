@@ -23,7 +23,8 @@ export async function searchHadiths(query: string): Promise<DetailedHadith[]> {
 
     for (const bookName of BOOKS) {
         try {
-            const response = await fetch(`/data/hadiths/${bookName}.json`);
+            const base = process.env.NEXT_PUBLIC_BASE_PATH || '';
+            const response = await fetch(`${base}/data/hadiths/${bookName}.json`);
             if (!response.ok) continue;
 
             const data: HadithBook = await response.json();
