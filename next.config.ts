@@ -1,10 +1,12 @@
 import type { NextConfig } from 'next';
 import withPWA from '@ducanh2912/next-pwa';
 
-const isCapacitorBuild = process.env.NEXT_PUBLIC_EXPORT === 'true';
+const isGHPages = process.env.GITHUB_ACTIONS === 'true';
 
 const nextConfig: NextConfig = {
-  ...(isCapacitorBuild ? { output: 'export', trailingSlash: true } : {}),
+  output: 'export',
+  trailingSlash: true,
+  ...(isGHPages ? { basePath: '/HIKMATIPS', assetPrefix: '/HIKMATIPS' } : {}),
   /* config options here */
   typescript: {
     ignoreBuildErrors: true,
